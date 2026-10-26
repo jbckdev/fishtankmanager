@@ -1,0 +1,22 @@
+{
+  "name": "FishTankManager",
+  "short_name": "FishTank",
+  "description": "Gestion de l'aquarium : éclairage HeliaLux, population, entretien",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#071318",
+  "theme_color": "#071318",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "shortcuts": [
+    { "name": "Nourrissage (15 min)", "short_name": "Nourrissage", "url": "/?raccourci=nourrissage", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "Entretien (1 h)", "short_name": "Entretien", "url": "/?raccourci=entretien", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "Photo (30 min)", "short_name": "Photo", "url": "/?raccourci=photo", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
+  ]
+}

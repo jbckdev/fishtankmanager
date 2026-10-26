@@ -1,0 +1,15 @@
+{
+  "name": "fish-tank-manager",
+  "private": true,
+  "description": "Gestion de l'aquarium : éclairage HeliaLux, population, entretien",
+  "scripts": {
+    "start": "node server.js",
+    "models": "node scripts/optimize-models.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@gltf-transform/cli": "^4.5.1"
+  }
+}

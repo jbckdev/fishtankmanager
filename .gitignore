@@ -1,0 +1,13 @@
+# Dépendances (npm install)
+node_modules/
+
+# Données personnelles : fiche du bac, carnet d'entretien, adresse du contrôleur
+data/
+
+# Modèles 3D tiers : chacun les télécharge (licences de redistribution variables)
+public/models/
+
+# Système et outils
+.DS_Store
+.claude/
+*.log

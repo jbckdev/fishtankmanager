@@ -1,0 +1,2757 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#071318">
+<title>FishTankManager</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FishTank">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #071318;
+  --bg2: #0b1d24;
+  --card: #0f252e;
+  --card2: #13303b;
+  --line: #1d3f4c;
+  --text: #e6f1f4;
+  --muted: #8aa8b2;
+  --accent: #38bdf8;
+  --accent2: #22d3ee;
+  --ok: #34d399;
+  --warn: #fbbf24;
+  --danger: #f87171;
+  --radius: 16px;
+  --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: var(--font);
+  background: radial-gradient(1200px 600px at 70% -10%, #0e3442 0%, transparent 60%), var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select { font: inherit; color: inherit; }
+.wrap {
+  max-width: 1080px; margin: 0 auto;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 96px max(16px, env(safe-area-inset-left));
+}
+
+/* Header */
+header { display: flex; align-items: center; gap: 12px; padding: 4px 0 16px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 650; letter-spacing: .2px; }
+.brand-dot { width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #bae6fd, #0284c7); box-shadow: 0 0 18px #38bdf866; }
+.conn { margin-left: auto; display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; }
+.conn i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.conn.on i { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+.conn.off i { background: var(--danger); }
+
+nav.tabs { display: flex; gap: 4px; background: var(--bg2); border: 1px solid var(--line); padding: 4px; border-radius: 12px; margin-bottom: 16px; }
+nav.tabs button { flex: 1; min-width: 0; border: 0; background: transparent; padding: 10px 8px; border-radius: 9px; color: var(--muted); cursor: pointer; font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+nav.tabs .sm { display: none; }
+@media (max-width: 560px) { nav.tabs .lg { display: none; } nav.tabs .sm { display: inline; } }
+@media (max-width: 480px) { nav.tabs button { padding: 10px 2px; font-size: 14px; } }
+
+nav.tabs button.alert::after { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--danger); margin-left: 5px; vertical-align: middle; }
+
+/* Mon bac */
+.lrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.lrow:first-child { border-top: 0; }
+.lrow select, .lrow input[type=text] { flex: 1 1 150px; min-width: 0; }
+.lrow .num { width: 72px; }
+.lrow-info { flex-basis: 100%; font-size: 12px; color: var(--muted); }
+.citem { display: flex; gap: 10px; padding: 7px 0; font-size: 14px; border-top: 1px solid var(--line); }
+.citem:first-child { border-top: 0; }
+.citem i { font-style: normal; width: 18px; text-align: center; flex: none; }
+.citem.ok i { color: var(--ok); } .citem.warn i { color: var(--warn); } .citem.bad i { color: var(--danger); } .citem.info i { color: var(--muted); }
+.gauge { height: 8px; background: #0a1a20; border-radius: 99px; overflow: hidden; margin: 6px 0 12px; }
+.gauge > div { height: 100%; border-radius: 99px; }
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin: 14px 0; }
+.chartbox { background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.chartbox .k { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
+.chartbox .v { font-family: var(--mono); font-size: 20px; }
+.chartbox svg { display: block; width: 100%; height: 50px; margin-top: 4px; }
+.log-form { gap: 8px; }
+.log-form input[type=number] { width: 74px; }
+.fiche { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0 12px; }
+.fiche textarea { background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; color: inherit; font: inherit; min-height: 60px; resize: vertical; }
+.fiche .wide { grid-column: 1 / -1; }
+#hShortcuts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#hShortcuts .sc { padding: 8px 10px; }
+#hShortcuts .ic { width: 34px; height: 34px; font-size: 17px; }
+.pop-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.pop-chips span { background: var(--bg2); border: 1px solid var(--line); border-radius: 99px; padding: 5px 12px; font-size: 14px; }
+.pop-chips b { font-family: var(--mono); }
+
+/* Simulation 3D */
+.sim-card { padding: 0; overflow: hidden; }
+.sim-view { position: relative; height: min(68vh, 640px); min-height: 380px; background: #04080a; }
+.sim-view > *:not(canvas) { z-index: 1; }
+.sim-hud { position: absolute; left: 16px; top: 14px; pointer-events: none; text-shadow: 0 1px 8px #000d; }
+.sim-clock { font-family: var(--mono); font-size: 44px; font-weight: 300; line-height: 1; }
+.sim-phase { font-weight: 600; margin-top: 6px; }
+.sim-chs { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; max-width: 300px; }
+.sim-chs span { font-size: 11px; font-family: var(--mono); background: #000a; border-radius: 99px; padding: 2px 8px; display: inline-flex; gap: 5px; align-items: center; text-shadow: none; }
+.sim-chs i { width: 7px; height: 7px; border-radius: 50%; }
+.sim-cams { position: absolute; right: 12px; top: 12px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; max-width: 50%; }
+.sim-cams .btn { background: #0b1d24cc; backdrop-filter: blur(6px); }
+.sim-cams .btn.on { border-color: var(--accent); color: var(--accent); }
+.sim-life { position: absolute; left: 12px; bottom: 12px; max-width: min(560px, calc(100% - 24px)); background: #0b1d24cc; backdrop-filter: blur(6px); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; font-size: 13px; line-height: 1.55; }
+.sim-life b { font-weight: 600; }
+.sim-msg { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); text-align: center; padding: 24px; }
+.sim-bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.sim-bar .tl { flex: 1 1 260px; height: 56px; cursor: pointer; touch-action: none; min-width: 0; }
+.icon-btn { width: 40px; height: 40px; padding: 0; display: inline-grid; place-items: center; font-size: 15px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; background: transparent; padding: 8px 10px; font-size: 13px; cursor: pointer; color: var(--muted); white-space: nowrap; }
+.seg button.on { background: var(--card2); color: var(--text); }
+.sim-opts { padding: 0 16px 14px; }
+.btn.live.on { border-color: var(--warn); color: var(--warn); background: #241d08; }
+@media (max-width: 640px) {
+  .sim-view { height: 62vh; min-height: 340px; }
+  .sim-clock { font-size: 32px; }
+  .sim-life { font-size: 12px; }
+  .sim-cams { flex-direction: column; align-items: flex-end; right: 8px; top: 8px; }
+  .sim-cams .btn { padding: 4px 8px; font-size: 12px; }
+  .sim-phase, .sim-chs { max-width: calc(100% - 96px); font-size: 14px; }
+}
+@media (max-width: 380px) { nav.tabs button { font-size: 12.5px; } }
+nav.tabs button.on { background: var(--card2); color: var(--text); }
+.subtabs { display: flex; gap: 6px; margin: -4px 0 16px; flex-wrap: wrap; }
+.subtabs button { border: 1px solid var(--line); background: var(--bg2); border-radius: 99px; padding: 6px 14px; color: var(--muted); cursor: pointer; font-size: 14px; }
+.subtabs button.on { color: var(--text); border-color: var(--accent); background: #0c3346; }
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; min-width: 0; }
+.card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.card h2 .sp { flex: 1; }
+.grid { display: grid; gap: 16px; }
+@media (min-width: 860px) { .g-2 { grid-template-columns: 1fr 1fr; } .g-hero { grid-template-columns: 320px minmax(0, 1fr); } }
+
+/* Hero */
+.hero { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; position: relative; overflow: hidden; min-height: 300px; }
+.hero { justify-content: flex-start; padding-top: 28px; }
+.hero > *:not(.aqua) { position: relative; text-shadow: 0 1px 10px #000c, 0 0 2px #0008; }
+@media (max-width: 640px) { .hero { min-height: 280px; } .brand { font-size: 15px; } }
+
+/* Aquarium virtuel */
+.aqua { position: absolute; inset: 0; width: 100%; height: 100%; }
+#aqTint { mix-blend-mode: multiply; }
+#aqBeams { mix-blend-mode: screen; }
+#aqTint, #aqDark, #aqBeams { transition: fill 1.2s, opacity 1.2s; }
+.plant { transform-box: fill-box; transform-origin: 50% 100%; animation: sway 7s ease-in-out infinite alternate; }
+.plant.f { animation-duration: 5s; }
+@keyframes sway { from { transform: rotate(-3deg); } to { transform: rotate(3deg); } }
+.fish { animation: swimR linear infinite; }
+.fish.l { animation-name: swimL; }
+@keyframes swimR { from { transform: translateX(-40px); } to { transform: translateX(440px); } }
+@keyframes swimL { from { transform: translateX(440px); } to { transform: translateX(-40px); } }
+.bubble { animation: rise linear infinite; }
+@keyframes rise { from { transform: translateY(0); opacity: .7; } to { transform: translateY(-250px); opacity: 0; } }
+.beam { animation: shimmer 6s ease-in-out infinite alternate; }
+@keyframes shimmer { from { opacity: .6; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .aqua * { animation: none !important; } }
+.aqua-play { position: absolute !important; right: 12px; bottom: 12px; text-shadow: none !important; background: #0f252ecc; backdrop-filter: blur(4px); }
+
+/* Réglages */
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 0; font-size: 14px; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; font-family: var(--mono); overflow-wrap: anywhere; }
+.field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); margin-top: 12px; }
+a { color: var(--accent); }
+.clock { font-family: var(--mono); font-size: 64px; font-weight: 300; letter-spacing: -2px; line-height: 1; }
+.prof-name { margin-top: 10px; font-size: 18px; font-weight: 600; }
+.prof-num { font-size: 12px; color: var(--muted); }
+.badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 99px; background: #0b3a2e; color: var(--ok); margin-top: 14px; }
+.badge.manual { background: #3b2a06; color: var(--warn); }
+.badge.sim { background: #0b2c45; color: var(--accent); }
+.total { margin-top: 14px; color: var(--muted); font-size: 13px; }
+
+/* Channel meters */
+.meters { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px; margin-top: 16px; }
+.meter { background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.meter .lbl { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.meter .lbl i { width: 8px; height: 8px; border-radius: 50%; }
+.meter .val { font-family: var(--mono); font-size: 26px; margin: 4px 0 8px; }
+.meter .val small { font-size: 13px; color: var(--muted); }
+.bar { height: 6px; background: #0a1a20; border-radius: 99px; overflow: hidden; }
+.bar > div { height: 100%; border-radius: 99px; transition: width .4s; }
+
+/* Chart */
+.chart { width: 100%; height: 260px; display: block; touch-action: none; user-select: none; }
+.chart.small { height: 70px; }
+.chart text { fill: var(--muted); font-size: 11px; font-family: var(--mono); }
+.legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 400; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 3px; border-radius: 2px; }
+
+/* Controls */
+.row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.row + .row { margin-top: 12px; }
+.grow { flex: 1; }
+.switch { position: relative; width: 46px; height: 26px; flex: none; display: inline-block; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch span { position: absolute; inset: 0; background: #23414c; border-radius: 99px; cursor: pointer; transition: .2s; }
+.switch span::before { content: ""; position: absolute; width: 20px; height: 20px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+.switch input:checked + span { background: var(--accent); }
+.switch input:checked + span::before { transform: translateX(20px); }
+.switch input:focus-visible + span { outline: 2px solid var(--accent2); outline-offset: 2px; }
+.ctl-title { font-weight: 600; }
+.ctl-sub { font-size: 12px; color: var(--muted); }
+select, input[type=time], input[type=text], input[type=number] {
+  background: var(--bg2); border: 1px solid var(--line); border-radius: 8px; padding: 7px 9px; outline: none;
+}
+select:focus, input:focus { border-color: var(--accent); }
+.slider-row { display: grid; grid-template-columns: 70px 1fr 48px; gap: 12px; align-items: center; margin-top: 10px; }
+.slider-row label { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.slider-row label i { width: 8px; height: 8px; border-radius: 50%; }
+.slider-row output { font-family: var(--mono); text-align: right; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 99px; background: #23414c; outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 3px solid var(--c, var(--accent)); cursor: pointer; }
+input[type=range]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 3px solid var(--c, var(--accent)); cursor: pointer; }
+.disabled { opacity: .45; pointer-events: none; }
+
+.btn { border: 1px solid var(--line); background: var(--card2); padding: 8px 14px; border-radius: 10px; cursor: pointer; font-weight: 550; white-space: nowrap; }
+.btn:hover { border-color: #2c5a6b; }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.primary { background: var(--accent); color: #04222f; border-color: transparent; }
+.btn.ghost { background: transparent; }
+.btn.danger { color: var(--danger); }
+.btn.sm { padding: 5px 10px; font-size: 13px; }
+.presets { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.preset { display: inline-flex; align-items: center; gap: 8px; }
+.preset i { width: 12px; height: 12px; border-radius: 50%; }
+
+/* Profiles */
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { border: 1px solid var(--line); background: var(--bg2); padding: 8px 12px; border-radius: 10px; cursor: pointer; text-align: left; min-width: 110px; }
+.chip b { display: block; font-size: 11px; color: var(--muted); font-weight: 600; }
+.chip.on { border-color: var(--accent); background: #0c3346; }
+.chip .today { color: var(--ok); }
+.ch-pick { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-pick button { border: 1px solid var(--line); background: var(--bg2); border-radius: 99px; padding: 5px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.ch-pick button i { width: 8px; height: 8px; border-radius: 50%; }
+.ch-pick button.on { border-color: var(--c); background: color-mix(in srgb, var(--c) 18%, var(--bg2)); }
+.hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+table.phases { width: 100%; border-collapse: collapse; font-size: 14px; }
+table.phases th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; text-align: left; padding: 6px 4px; white-space: nowrap; }
+table.phases td { padding: 4px; border-top: 1px solid var(--line); }
+table.phases tr.sel td { background: #0c3346; }
+table.phases tr { cursor: pointer; }
+table.phases input[type=number] { width: 58px; padding: 6px; font-family: var(--mono); }
+table.phases input[type=time] { width: 98px; padding: 6px; }
+table.phases select { padding: 6px; }
+.th-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.scroll-x { overflow-x: auto; }
+.dirty { color: var(--warn); font-size: 12px; font-weight: 600; text-transform: none; letter-spacing: 0; }
+
+/* Week */
+.week-row { display: grid; grid-template-columns: 110px 200px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.week-row:first-of-type { border-top: 0; }
+.week-row.today .day { color: var(--accent); }
+.week-row .day { font-weight: 600; }
+@media (max-width: 640px) { .week-row { grid-template-columns: 1fr 1fr; } .week-row svg { grid-column: 1 / -1; } }
+
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); background: #10303b; border: 1px solid var(--line); padding: 10px 16px; border-radius: 12px; opacity: 0; transition: .25s; pointer-events: none; z-index: 10; box-shadow: 0 10px 30px #0008; max-width: calc(100vw - 32px); }
+.toast.show { opacity: 1; transform: translateX(-50%); }
+.toast.err { border-color: var(--danger); color: #fecaca; }
+/* Raccourcis */
+.shortcuts { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.sc { display: flex; align-items: center; gap: 12px; text-align: left; border: 1px solid var(--line); background: var(--bg2); border-radius: 12px; padding: 10px 12px; cursor: pointer; }
+.sc:hover { border-color: #2c5a6b; }
+.sc .ic { font-size: 20px; width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; flex: none; }
+.sc b { display: block; font-weight: 600; }
+.sc small { color: var(--muted); font-size: 12px; }
+.sc.on { border-color: var(--warn); background: #241d08; }
+.sc.on small { color: var(--warn); }
+
+/* Statistiques */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 14px; }
+.stat { background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.stat .k { font-size: 12px; color: var(--muted); }
+.stat .v { font-family: var(--mono); font-size: 19px; margin-top: 2px; white-space: nowrap; }
+.stat.warn { border-color: #6b4f12; } .stat.warn .v { color: var(--warn); }
+.stat.bad { border-color: #6b1f1f; } .stat.bad .v { color: var(--danger); }
+.stat-note { font-size: 12px; color: var(--muted); margin-top: 8px; }
+.stat-note.warn { color: var(--warn); } .stat-note.bad { color: var(--danger); }
+
+/* Éditeur */
+.toolbar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+dialog { background: var(--card); color: var(--text); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; width: min(520px, calc(100vw - 32px)); }
+dialog::backdrop { background: #000b; }
+dialog h3 { margin: 0 0 8px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+.form-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+@media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
+
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><div class="brand-dot"></div>FishTankManager</div>
+    <div class="conn" id="conn"><i></i><span>Connexion…</span></div>
+  </header>
+
+  <nav class="tabs">
+    <button data-space="home" class="on">Accueil</button>
+    <button data-space="light">Lumière</button>
+    <button data-space="bac"><span class="lg">Mon bac</span><span class="sm">Bac</span></button>
+    <button data-space="care" id="tabCare">Entretien</button>
+    <button data-space="set"><span class="lg">Réglages</span><span class="sm">Régl.</span></button>
+  </nav>
+  <nav class="subtabs" id="lightNav" hidden>
+    <button data-tab="now" class="on">Direct</button>
+    <button data-tab="sim">Simulation 3D</button>
+    <button data-tab="prof">Programmes</button>
+    <button data-tab="week">Semaine</button>
+  </nav>
+
+  <!-- ===================== ACCUEIL ===================== -->
+  <section id="tab-home" class="grid">
+    <div class="grid g-2">
+      <div class="card">
+        <h2>Lumière <span class="sp"></span><button class="btn sm" data-go="now">Ouvrir ›</button></h2>
+        <div class="row">
+          <div class="clock" id="hClock" style="font-size:46px">--:--</div>
+          <div class="grow"><div class="ctl-title" id="hProf">—</div><div class="badge" id="hMode" style="margin-top:6px"></div></div>
+        </div>
+        <div class="meters" id="hMeters"></div>
+        <div class="shortcuts" id="hShortcuts" style="margin-top:14px"></div>
+      </div>
+      <div class="card">
+        <h2>À faire <span class="sp"></span><button class="btn sm" data-go="care">Carnet ›</button></h2>
+        <div id="hTodo"><div class="hint">Chargement…</div></div>
+        <div class="row" style="margin-top:14px;gap:8px">
+          <button class="btn sm" id="hWater">💧 Changement d'eau fait</button>
+          <button class="btn sm" id="hFilter">🌀 Filtre nettoyé</button>
+          <button class="btn sm" data-go="care">🧪 Saisir un test</button>
+        </div>
+      </div>
+    </div>
+    <div class="grid g-2">
+      <div class="card">
+        <h2>Alertes <span class="sp"></span><button class="btn sm" data-go="bac">Mon bac ›</button></h2>
+        <div id="hAlerts"></div>
+      </div>
+      <div class="card">
+        <h2>Derniers paramètres <span class="sp"></span><button class="btn sm" data-go="care">Courbes ›</button></h2>
+        <div class="charts" id="hParams" style="margin:0"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Population <span class="sp"></span><button class="btn sm" data-go="bac">Gérer ›</button></h2>
+      <div id="hPop"></div>
+    </div>
+  </section>
+
+  <!-- ===================== MAINTENANT ===================== -->
+  <section id="tab-now" class="grid" hidden>
+    <div class="grid g-hero">
+      <div class="card hero">
+        <svg class="aqua" id="aqua" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg>
+        <button class="btn sm aqua-play" id="aquaPlay" title="Ouvrir la simulation 3D">Simulation 3D ›</button>
+        <div class="clock" id="clock">--:--</div>
+        <div class="prof-name" id="heroProf">—</div>
+        <div class="prof-num" id="heroNum"></div>
+        <div class="badge" id="modeBadge">Programme automatique</div>
+        <div class="total" id="heroTotal"></div>
+      </div>
+      <div class="card">
+        <h2>Programme du jour <span class="sp"></span><span class="legend" id="legendNow"></span></h2>
+        <svg class="chart" id="chartNow"></svg>
+        <div class="meters" id="meters"></div>
+        <div id="statsNow"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Raccourcis <span class="sp"></span><button class="btn sm" id="scResume" hidden>↺ Reprendre le programme</button></h2>
+      <div class="shortcuts" id="shortcuts"></div>
+    </div>
+
+    <div class="grid g-2">
+      <div class="card" id="manualCard">
+        <div class="row">
+          <label class="switch"><input type="checkbox" id="cswi"><span></span></label>
+          <div class="grow"><div class="ctl-title">Contrôle manuel</div><div class="ctl-sub">Remplace le programme pendant une durée donnée</div></div>
+          <select id="ctime" title="Durée"></select>
+        </div>
+        <div id="sliders"></div>
+        <div class="presets" id="presets"></div>
+      </div>
+
+      <div class="card" id="simCard">
+        <div class="row">
+          <label class="switch"><input type="checkbox" id="tswi"><span></span></label>
+          <div class="grow"><div class="ctl-title">Simuler une heure</div><div class="ctl-sub">Prévisualise le programme à n'importe quel moment</div></div>
+          <select id="ttime" title="Durée"></select>
+        </div>
+        <div id="simBody">
+          <div class="row" style="margin-top:16px">
+            <div class="clock" style="font-size:36px" id="simClock">--:--</div>
+            <div class="grow"></div>
+            <button class="btn" id="simPlay">▶ Journée accélérée</button>
+          </div>
+          <input type="range" id="stime" min="0" max="1439" step="5" style="margin-top:14px">
+          <div class="row" style="justify-content:space-between;color:var(--muted);font-size:12px;font-family:var(--mono);margin-top:6px">
+            <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== SIMULATION 3D ===================== -->
+  <section id="tab-sim" hidden>
+    <div class="card sim-card">
+      <div class="sim-view" id="simView">
+        <div class="sim-msg" id="simMsg">Chargement de la simulation 3D…</div>
+        <div class="sim-hud">
+          <div class="sim-clock" id="simClock3">--:--</div>
+          <div class="sim-phase" id="simPhase"></div>
+          <div class="sim-chs" id="simChs"></div>
+        </div>
+        <div class="sim-cams">
+          <button class="btn sm" data-view="face">Face</button>
+          <button class="btn sm" data-view="plongee">Dessus</button>
+          <button class="btn sm" data-view="cote">Côté</button>
+          <button class="btn sm" data-view="pres">Près</button>
+          <button class="btn sm" data-view="suivre" title="Suivre un poisson de près (cliquer à nouveau : poisson suivant)">Suivre</button>
+          <button class="btn sm" id="simRotate" title="Rotation automatique">⟲</button>
+          <button class="btn sm" id="simHQ" title="Rendu haute qualité (flou de profondeur, lueurs) ou économique">HD</button>
+        </div>
+        <div class="sim-life" id="simLife" hidden></div>
+      </div>
+      <div class="sim-bar">
+        <button class="btn icon-btn" id="simPrev" title="Phase précédente (← / → : ±15 min)">⏮</button>
+        <button class="btn icon-btn primary" id="simPlayBtn" title="Lecture / pause (espace)">▶</button>
+        <button class="btn icon-btn" id="simNext" title="Phase suivante">⏭</button>
+        <canvas class="tl" id="simTL" title="Glisser pour se déplacer dans la journée"></canvas>
+        <div class="seg" id="simSpeed">
+          <button data-s="1" title="Temps réel">×1</button>
+          <button data-s="60">1 min/s</button>
+          <button data-s="600" class="on">10 min/s</button>
+          <button data-s="3600">1 h/s</button>
+        </div>
+      </div>
+      <div class="row sim-opts">
+        <button class="btn sm live on" id="simLiveBtn" title="Suit la lampe en temps réel">● En direct</button>
+        <select id="simSrc" title="Profil simulé"></select>
+        <label class="row" style="gap:8px;font-size:13px;color:var(--muted)" title="Simule l'effet nuages du profil">
+          <span class="switch"><input type="checkbox" id="simClouds" checked><span></span></span> Nuages
+        </label>
+        <label class="row" style="gap:8px;font-size:13px;color:var(--muted)" title="La vraie lampe suit la simulation (programme du jour uniquement)">
+          <span class="switch"><input type="checkbox" id="simMirror"><span></span></span> Reproduire sur la lampe
+        </label>
+        <div class="grow"></div>
+        <span class="hint" style="margin:0">Glisser : tourner · molette / pincer : zoom · espace : lecture</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PROFILS ===================== -->
+  <section id="tab-prof" class="grid" hidden>
+    <div class="card">
+      <h2>Profils</h2>
+      <div class="chips" id="profChips"></div>
+    </div>
+    <div class="card" id="editor" hidden>
+      <h2>
+        <span id="edTitle">Profil</span><span class="dirty" id="edDirty" hidden>● modifié</span>
+        <span class="sp"></span>
+        <select id="edCompare" title="Superposer un autre profil en pointillés"></select>
+        <select id="tplSelect" title="Charger un modèle Juwel"><option value="">Modèles Juwel…</option></select>
+      </h2>
+      <div class="row">
+        <input type="text" id="edName" maxlength="16" placeholder="Nom du profil" style="min-width:200px">
+        <div class="grow"></div>
+        <label class="row" style="gap:8px;font-size:13px;color:var(--muted)" title="Affiche la phase sélectionnée sur la lampe">
+          <span class="switch"><input type="checkbox" id="edPreview"><span></span></span> Aperçu sur la lampe
+        </label>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <div class="ch-pick" id="chPick"></div>
+        <div class="grow"></div>
+        <div class="toolbar">
+          <button class="btn sm" id="edUndo" title="Annuler (⌘Z)">↶</button>
+          <button class="btn sm" id="edRedo" title="Rétablir (⇧⌘Z)">↷</button>
+          <button class="btn sm" id="edSmooth" title="Ajoute des points intermédiaires en courbe douce après la phase sélectionnée">〰 Adoucir la transition</button>
+          <button class="btn sm" id="edWizard">☀ Assistant journée</button>
+        </div>
+      </div>
+      <svg class="chart" id="chartEd" style="height:300px;margin-top:8px"></svg>
+      <div class="hint">Glissez les points : vertical = intensité du canal sélectionné (« Tous » garde les proportions entre canaux), horizontal = heure (pas de 5 min). Double-clic sur le graphique pour ajouter une phase.</div>
+      <div class="hint" id="edCmpInfo"></div>
+      <div id="edStats"></div>
+
+      <div class="scroll-x" style="margin-top:16px">
+        <table class="phases" id="phTable"></table>
+      </div>
+      <div class="row" style="margin-top:16px">
+        <button class="btn" id="phAdd">+ Ajouter une phase</button>
+        <button class="btn ghost danger" id="phDel">Supprimer la phase</button>
+        <div class="grow"></div>
+        <select id="edCopy" title="Copier ce profil vers un autre emplacement"></select>
+        <button class="btn ghost" id="edCancel">Annuler</button>
+        <button class="btn primary" id="edSave" disabled>Enregistrer sur le contrôleur</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== SEMAINE ===================== -->
+  <section id="tab-week" class="grid" hidden>
+    <div class="card">
+      <h2>Programme de la semaine <span class="sp"></span><span class="dirty" id="wkDirty" hidden>● modifié</span></h2>
+      <div class="row" id="wkQuick" style="margin-bottom:8px">
+        <span class="ctl-sub">Appliquer</span>
+        <select id="wkProf"></select>
+        <span class="ctl-sub">à</span>
+        <button class="btn sm" data-r="all">Tous les jours</button>
+        <button class="btn sm" data-r="wd">Lun – Ven</button>
+        <button class="btn sm" data-r="we">Sam – Dim</button>
+      </div>
+      <div id="weekRows"></div>
+      <div class="row" style="margin-top:16px">
+        <div class="grow"></div>
+        <button class="btn ghost" id="wkCancel">Annuler</button>
+        <button class="btn primary" id="wkSave" disabled>Enregistrer</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== MON BAC ===================== -->
+  <section id="tab-bac" class="grid" hidden>
+    <div class="card">
+      <div class="row">
+        <div class="grow"><div class="ctl-title" id="bacName" style="font-size:18px">Mon bac</div><div class="ctl-sub" id="bacSub"></div></div>
+        <span class="hint" id="bacSaved" style="margin:0"></span>
+      </div>
+      <div class="stats" id="bacStats"></div>
+      <div id="bacTodo" style="margin-top:10px"></div>
+    </div>
+
+    <div class="grid g-2">
+      <div class="card">
+        <h2>Population <span class="sp"></span><button class="btn sm" id="fishAdd">+ Espèce</button></h2>
+        <div id="fishList"></div>
+        <div class="hint">Néons/cardinalis, scalaires (avec leur livrée), corydoras et apistogrammas apparaissent dans la simulation 3D.</div>
+      </div>
+      <div class="card">
+        <h2>Compatibilité</h2>
+        <div id="compat"></div>
+        <div class="hint">Valeurs indicatives issues des fiches d'espèces courantes : à croiser avec ton expérience.</div>
+      </div>
+    </div>
+
+    <div class="grid g-2">
+      <div class="card">
+        <h2>Plantes <span class="sp"></span><button class="btn sm" id="plantAdd">+ Plante</button></h2>
+        <div id="plantList"></div>
+        <datalist id="plantNames"></datalist>
+      </div>
+      <div class="card">
+        <h2>Décor <span class="sp"></span><button class="btn sm" id="decorAdd">+ Élément</button></h2>
+        <div id="decorList"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Fiche du bac</h2>
+      <div class="fiche" id="fiche"></div>
+    </div>
+  </section>
+
+  <!-- ===================== ENTRETIEN ===================== -->
+  <section id="tab-care" class="grid" hidden>
+    <div class="card">
+      <h2>À faire</h2>
+      <div id="careTodo"></div>
+    </div>
+    <div class="card">
+      <h2>Carnet d'entretien</h2>
+      <div class="row log-form">
+        <input type="date" id="logDate">
+        <select id="logType"></select>
+        <span class="row" id="logFields" style="gap:8px"></span>
+        <input type="text" id="logNote" placeholder="Note (facultatif)" class="grow" style="min-width:140px">
+        <button class="btn primary sm" id="logAdd">Ajouter</button>
+      </div>
+      <div class="charts" id="logCharts"></div>
+      <div id="logList"></div>
+      <div class="row hint" style="gap:6px;margin-top:12px">
+        Rappels : changement d'eau tous les <input type="number" id="remWater" min="0" max="90" style="width:58px"> j,
+        filtre tous les <input type="number" id="remFilter" min="0" max="180" style="width:58px"> j,
+        tests tous les <input type="number" id="remTest" min="0" max="90" style="width:58px"> j (0 = désactivé)
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ===================== RÉGLAGES ===================== -->
+  <section id="tab-set" class="grid" hidden>
+    <div class="card">
+      <h2>Contrôleur HeliaLux</h2>
+      <div class="row">
+        <input type="text" id="ctrlIp" placeholder="ex. 192.168.1.50" autocomplete="off" style="flex:1 1 200px">
+        <button class="btn primary" id="ctrlSave">Tester et enregistrer</button>
+      </div>
+      <div class="hint" id="ctrlMsg">Adresse IP du HeliaLux SmartControl sur ton réseau (affichée dans l'interface de ta box internet ou dans l'appli Juwel).</div>
+    </div>
+    <div class="grid g-2">
+      <div class="card">
+        <h2>Heure</h2>
+        <dl class="kv"><dt>Contrôleur</dt><dd id="stClock">--:--</dd><dt>Cet appareil</dt><dd id="stLocal">--:--</dd></dl>
+        <div class="stat-note" id="stDrift"></div>
+        <label class="field">Fuseau horaire<select id="stTz"></select></label>
+        <div class="row" style="margin-top:14px">
+          <label class="switch"><input type="checkbox" id="stNtpOn"><span></span></label>
+          <div class="grow"><div class="ctl-title">Heure automatique</div><div class="ctl-sub">Synchronisée par Internet (NTP)</div></div>
+        </div>
+        <label class="field" id="stNtpRow">Serveur de temps
+          <span class="row" style="gap:8px"><input type="text" id="stNtp" maxlength="31" class="grow"><span id="stNtpOk"></span></span>
+        </label>
+        <div id="stManual" hidden>
+          <div class="row" style="margin-top:12px">
+            <input type="date" id="stDate"><input type="time" id="stTime">
+            <button class="btn sm" id="stNow">Heure de cet appareil</button>
+          </div>
+        </div>
+        <div class="row" style="margin-top:16px">
+          <div class="grow"></div>
+          <button class="btn primary" id="stSave" disabled>Enregistrer</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Appareil</h2>
+        <dl class="kv" id="stDevice"></dl>
+        <div class="hint" style="margin-top:14px">
+          Mise à jour du firmware et changement de type de lampe (qui réinitialise les profils) :
+          <a id="stFwLink" target="_blank" rel="noopener">interface d'origine ↗</a>
+        </div>
+      </div>
+    </div>
+    <div class="grid g-2">
+      <div class="card">
+        <h2>Réseau</h2>
+        <dl class="kv" id="stNet"></dl>
+        <div class="hint" style="margin-top:14px">
+          Affiché en lecture seule : une erreur ici déconnecterait le contrôleur du WiFi. Pour le modifier :
+          <a id="stNetLink" target="_blank" rel="noopener">interface d'origine ↗</a>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Sauvegarde</h2>
+        <div class="ctl-sub">Les 8 profils et le programme de la semaine, dans un fichier JSON à garder de côté (avant une mise à jour du firmware, par exemple).</div>
+        <div class="row" style="margin-top:14px">
+          <button class="btn" id="bkSave">⬇ Télécharger une sauvegarde</button>
+          <button class="btn" id="bkLoad">⬆ Restaurer…</button>
+          <input type="file" id="bkFile" accept="application/json,.json" hidden>
+        </div>
+        <div class="hint" id="bkMsg"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Crédits des modèles 3D</h2>
+      <div class="ctl-sub">Modèles réels utilisés par la simulation 3D (les autres éléments sont générés par l'application).</div>
+      <dl class="kv" id="stCredits" style="margin-top:12px"></dl>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<dialog id="wizard">
+  <h3>☀ Assistant journée</h3>
+  <div class="hint" style="margin-top:0">Génère un profil complet avec lever et coucher progressifs (teintes bleues/rouges à l'aube et au crépuscule). Les proportions de couleur reprennent la phase la plus lumineuse du profil actuel. Le profil actuel est remplacé, mais ↶ permet de revenir en arrière.</div>
+  <div class="form-grid">
+    <label>Début du lever<input type="time" id="wzOn" value="10:00"></label>
+    <label>Fin du coucher<input type="time" id="wzOff" value="21:00"></label>
+    <label>Durée des transitions
+      <select id="wzRamp"><option value="30">30 min</option><option value="45">45 min</option><option value="60" selected>1 h</option><option value="90">1 h 30</option></select>
+    </label>
+    <label>Intensité maximale
+      <select id="wzMax"><option>100</option><option>90</option><option selected>80</option><option>70</option><option>60</option><option>50</option></select>
+    </label>
+    <label>Pause de midi (anti-algues)
+      <select id="wzSiesta"><option value="0">Aucune</option><option value="60">1 h</option><option value="120" selected>2 h</option><option value="180">3 h</option></select>
+    </label>
+    <label>Veilleuse bleue la nuit
+      <select id="wzMoon"><option value="0" selected>Éteinte</option><option value="2">2 %</option><option value="5">5 %</option><option value="10">10 %</option></select>
+    </label>
+  </div>
+  <div class="hint" id="wzInfo" style="margin-top:12px"></div>
+  <div class="row" style="margin-top:16px;justify-content:flex-end">
+    <button class="btn ghost" id="wzCancel">Annuler</button>
+    <button class="btn primary" id="wzOk">Générer</button>
+  </div>
+</dialog>
+
+<script src="catalogue.js"></script>
+<script>
+// ---------------------------------------------------------------- utils
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const pad = (n) => String(n).padStart(2, '0');
+const fmt = (m) => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`;
+const parseHM = (s) => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const escapeHtml = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+const NS = 'http://www.w3.org/2000/svg';
+const svgEl = (tag, attrs = {}, parent) => {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+};
+
+async function api(path, body) {
+  const r = await fetch('/api/' + path, body === undefined ? {} : {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+
+let toastT;
+function toast(msg, err = false) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.toggle('err', err);
+  t.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('show'), err ? 5000 : 2500);
+}
+
+// ---------------------------------------------------------------- lampe / canaux
+const CH_DEF = {
+  W: { name: 'Blanc', color: '#e6edf2', rgb: [255, 248, 236] },
+  B: { name: 'Bleu', color: '#3b82f6', rgb: [70, 120, 255] },
+  G: { name: 'Vert', color: '#84cc16', rgb: [130, 230, 70] },
+  R: { name: 'Rouge', color: '#ef4444', rgb: [255, 70, 60] },
+};
+let channels = [];
+function setupLamp(lamp) {
+  const keys = lamp === '2Ch' ? ['W', 'B'] : lamp === '2x2Ch' ? ['W', 'B', 'W', 'B'] : ['W', 'B', 'G', 'R'];
+  channels = keys.map((k, i) => ({ ...CH_DEF[k], key: k, name: lamp === '2x2Ch' ? `${CH_DEF[k].name} ${i < 2 ? 1 : 2}` : CH_DEF[k].name }));
+}
+// Les réglages sont écrits en [Blanc, Bleu, Vert, Rouge] ; on les ramène aux canaux réels de la lampe
+const KEY_IDX = { W: 0, B: 1, G: 2, R: 3 };
+const toCh = (wbgr) => channels.map((c) => wbgr[KEY_IDX[c.key]]);
+
+function lightColor(vals) {
+  let r = 0, g = 0, b = 0;
+  const v = vals.slice(0, channels.length);
+  v.forEach((x, i) => { const w = x / 100; r += channels[i].rgb[0] * w; g += channels[i].rgb[1] * w; b += channels[i].rgb[2] * w; });
+  const mx = Math.max(r, g, b);
+  if (!mx) return { css: 'transparent', level: 0 };
+  const k = 255 / mx;
+  return { css: `rgb(${Math.round(r * k)},${Math.round(g * k)},${Math.round(b * k)})`, level: Math.max(...v) / 100 };
+}
+
+// Teinte perçue, assombrie selon l'intensité (pour la bande de couleur du graphique)
+function lightRGB(vals) {
+  const v = vals.slice(0, channels.length);
+  let r = 0, g = 0, b = 0;
+  v.forEach((x, i) => { const w = x / 100; r += channels[i].rgb[0] * w; g += channels[i].rgb[1] * w; b += channels[i].rgb[2] * w; });
+  const bg = [10, 26, 32], mx = Math.max(r, g, b);
+  if (!mx) return `rgb(${bg})`;
+  const t = Math.pow(Math.max(...v) / 100, 0.6);
+  return `rgb(${[r, g, b].map((c, i) => Math.round(bg[i] + ((c * 255) / mx - bg[i]) * t))})`;
+}
+
+function interp(times, arr, m) {
+  for (let i = 1; i < times.length; i++) {
+    if (m <= times[i]) {
+      const t0 = times[i - 1], t1 = times[i];
+      if (t1 === t0) return arr[i];
+      return arr[i - 1] + (arr[i] - arr[i - 1]) * (m - t0) / (t1 - t0);
+    }
+  }
+  return arr[arr.length - 1];
+}
+
+// ---------------------------------------------------------------- statistiques
+const fmtDur = (min) => `${Math.floor(min / 60)} h ${pad(min % 60)}`;
+function profileStats(p) {
+  let lit = 0, strong = 0, sum = 0, first = null, last = null;
+  const chs = p.ch.slice(0, channels.length);
+  for (let m = 0; m < 1440; m++) {
+    const v = chs.map((a) => interp(p.times, a, Math.min(m, 1439)));
+    const mx = Math.max(...v);
+    if (mx >= 10) { lit++; if (first == null) first = m; last = m; }
+    if (mx >= 50) strong++;
+    sum += v.reduce((a, b) => a + b, 0) / v.length;
+  }
+  return { lit, strong, first, last, dose: sum / 100 / 60 };
+}
+function renderStats(el, p) {
+  const s = profileStats(p);
+  const lvl = s.strong > 600 ? 'bad' : s.strong > 540 ? 'warn' : '';
+  const note = s.strong > 600 ? 'Plus de 10 h de pleine lumière : risque d\'algues élevé.'
+    : s.strong > 540 ? 'Plus de 9 h de pleine lumière : surveillez l\'apparition d\'algues.'
+    : s.strong < 240 ? 'Moins de 4 h de pleine lumière : peut être juste pour des plantes exigeantes.'
+    : 'Durée de pleine lumière raisonnable (moins de 9 h).';
+  el.innerHTML = `<div class="stats">
+    <div class="stat"><div class="k">Éclairage (≥ 10 %)</div><div class="v">${fmtDur(s.lit)}</div></div>
+    <div class="stat ${lvl}"><div class="k">Pleine lumière (≥ 50 %)</div><div class="v">${fmtDur(s.strong)}</div></div>
+    <div class="stat"><div class="k">Plage d'éclairage</div><div class="v">${s.first == null ? '—' : `${fmt(s.first)}–${fmt(s.last)}`}</div></div>
+    <div class="stat" title="Toute la lumière de la journée ramenée en heures à 100 %"><div class="k">Dose quotidienne</div><div class="v">${s.dose.toFixed(1)} h</div></div>
+  </div><div class="stat-note ${lvl}">${note}</div>`;
+}
+
+// ---------------------------------------------------------------- graphique
+// opts: { now, sim, edit: { active, sel, onSelect, onDrag, onAdd } }
+function drawChart(svg, prof, opts = {}) {
+  const W = svg.clientWidth || 600, H = svg.clientHeight || 260;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = '';
+  const small = H < 120;
+  const P = small ? { l: 2, r: 2, t: 4, b: 4 } : { l: 38, r: 12, t: 12, b: opts.band ? 40 : 24 };
+  const cw = W - P.l - P.r, chh = H - P.t - P.b;
+  const X = (m) => P.l + (m / 1439) * cw;
+  const Y = (v) => P.t + chh - (v / 100) * chh;
+  svg._map = { P, cw, chh };
+
+  const defs = svgEl('defs', {}, svg);
+  channels.forEach((c, i) => {
+    const g = svgEl('linearGradient', { id: `${svg.id}-g${i}`, x1: 0, y1: 0, x2: 0, y2: 1 }, defs);
+    svgEl('stop', { offset: 0, 'stop-color': c.color, 'stop-opacity': small ? .35 : .2 }, g);
+    svgEl('stop', { offset: 1, 'stop-color': c.color, 'stop-opacity': 0 }, g);
+  });
+
+  if (!small) {
+    for (const v of [0, 25, 50, 75, 100]) {
+      svgEl('line', { x1: P.l, x2: W - P.r, y1: Y(v), y2: Y(v), stroke: '#1d3f4c', 'stroke-dasharray': v % 50 ? '2 4' : '' }, svg);
+      svgEl('text', { x: P.l - 6, y: Y(v) + 4, 'text-anchor': 'end' }, svg).textContent = v + '%';
+    }
+    for (let h = 0; h <= 24; h += cw < 480 ? 6 : 3) {
+      svgEl('text', { x: X(Math.min(h * 60, 1439)), y: H - 6, 'text-anchor': h === 0 ? 'start' : h === 24 ? 'end' : 'middle' }, svg).textContent = pad(h) + 'h';
+    }
+  }
+
+  const { times, ch } = prof;
+  const active = opts.edit?.active;
+  const all = active === -1;
+  channels.forEach((c, i) => {
+    const pts = times.map((m, k) => `${X(m)},${Y(ch[i][k])}`);
+    const faded = opts.edit && !all && active !== i;
+    svgEl('path', { d: `M${X(0)},${Y(0)} L${pts.join(' L')} L${X(1439)},${Y(0)} Z`, fill: `url(#${svg.id}-g${i})`, opacity: faded ? .3 : 1 }, svg);
+    svgEl('path', { d: `M${pts.join(' L')}`, fill: 'none', stroke: c.color, 'stroke-width': small ? 1.5 : active === i ? 2.5 : 2, 'stroke-linejoin': 'round', opacity: faded ? .35 : 1 }, svg);
+  });
+
+  if (opts.compare) {
+    const cp = opts.compare;
+    channels.forEach((c, i) => {
+      if (opts.edit && !all && active !== i) return;
+      const d = 'M' + cp.times.map((m, k) => `${X(m)},${Y(cp.ch[i][k])}`).join(' L');
+      svgEl('path', { d, fill: 'none', stroke: c.color, 'stroke-width': 1.5, 'stroke-dasharray': '5 4', opacity: 0.75 }, svg);
+    });
+  }
+  if (opts.band && !small) {
+    const g = svgEl('linearGradient', { id: `${svg.id}-band`, x1: 0, x2: 1, y1: 0, y2: 0 }, defs);
+    for (let m = 0; m <= 1440; m += 10) {
+      const mm = Math.min(m, 1439);
+      svgEl('stop', { offset: mm / 1439, 'stop-color': lightRGB(channels.map((c, i) => interp(times, ch[i], mm))) }, g);
+    }
+    svgEl('rect', { x: P.l, y: P.t + chh + 6, width: cw, height: 10, rx: 3, fill: `url(#${svg.id}-band)` }, svg);
+  }
+
+  const marker = (m, color) => {
+    svgEl('line', { x1: X(m), x2: X(m), y1: P.t, y2: P.t + chh, stroke: color, 'stroke-width': 1.5, 'stroke-dasharray': '4 3' }, svg);
+    if (small) return;
+    const x = clamp(X(m), P.l + 22, W - P.r - 22);
+    svgEl('rect', { x: x - 22, y: P.t - 2, width: 44, height: 16, rx: 4, fill: color }, svg);
+    svgEl('text', { x, y: P.t + 10, 'text-anchor': 'middle', style: 'fill:#04222f;font-weight:700' }, svg).textContent = fmt(m);
+  };
+  if (opts.sim != null) marker(opts.sim, '#38bdf8');
+  if (opts.now != null) marker(opts.now, '#fbbf24');
+
+  if (opts.edit) {
+    const e = opts.edit;
+    if (e.sel != null) svgEl('line', { x1: X(times[e.sel]), x2: X(times[e.sel]), y1: P.t, y2: P.t + chh, stroke: '#38bdf8', 'stroke-opacity': .4 }, svg);
+    times.forEach((m, k) => {
+      const v = all ? Math.max(...channels.map((c, i) => ch[i][k])) : ch[active][k];
+      const col = all ? '#38bdf8' : channels[active].color;
+      const g = svgEl('g', { style: 'cursor:grab' }, svg);
+      svgEl('circle', { cx: X(m), cy: Y(v), r: 14, fill: 'transparent' }, g);
+      svgEl('circle', { cx: X(m), cy: Y(v), r: k === e.sel ? 7 : 5, fill: k === e.sel ? col : '#0f252e', stroke: col, 'stroke-width': 2.5 }, g);
+      g.addEventListener('pointerdown', (ev) => startDrag(ev, svg, k, e));
+    });
+    svg.ondblclick = (ev) => e.onAdd(Math.round(svgPos(svg, ev).m / 5) * 5);
+  }
+}
+
+function svgPos(svg, ev) {
+  const r = svg.getBoundingClientRect();
+  const { P, cw, chh } = svg._map;
+  const x = (ev.clientX - r.left) * (svg.viewBox.baseVal.width / r.width);
+  const y = (ev.clientY - r.top) * (svg.viewBox.baseVal.height / r.height);
+  return { m: clamp(((x - P.l) / cw) * 1439, 0, 1439), v: clamp(((P.t + chh - y) / chh) * 100, 0, 100) };
+}
+
+function startDrag(ev, svg, k, e) {
+  ev.preventDefault(); ev.stopPropagation();
+  // Déplacement relatif au point de départ (la zone de saisie est large), avec un seuil
+  // pour qu'un simple clic ne modifie rien ; un geste vertical ne change pas l'heure
+  const p0 = svgPos(svg, ev);
+  const x0 = ev.clientX, y0 = ev.clientY;
+  e.onSelect(k);
+  let moved = false;
+  const move = (mv) => {
+    if (!moved) {
+      if (Math.hypot(mv.clientX - x0, mv.clientY - y0) < 4) return;
+      moved = true;
+      e.onDragStart?.(k);
+    }
+    const { m, v } = svgPos(svg, mv);
+    e.onDrag(k, m - p0.m, v - p0.v, Math.abs(mv.clientX - x0) < 8);
+  };
+  const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', up);
+}
+
+// ---------------------------------------------------------------- état
+const S = { ov: null, st: null, holdUntil: 0, profCache: {} };
+
+const DUR = [['00:15', '15 min'], ['00:30', '30 min'], ['01:00', '1 h'], ['02:00', '2 h'], ['04:00', '4 h'], ['08:00', '8 h'], ['12:00', '12 h']];
+for (const id of ['ctime', 'ttime']) $('#' + id).innerHTML = DUR.map(([v, l]) => `<option value="${v}">${l}</option>`).join('');
+
+const isOn = (v) => v === true || v === 1 || (typeof v === 'string' && v !== '' && v !== 'false' && v !== '0');
+
+// ---------------------------------------------------------------- MAINTENANT
+const PRESETS = [
+  ['Éteint', [0, 0, 0, 0]],
+  ['Clair de lune', [0, 6, 0, 0]],
+  ['Aube', [10, 25, 10, 35]],
+  ['Observation', [100, 50, 70, 70]],
+  ['Plein', [100, 100, 100, 100]],
+];
+// Raccourcis : couleur [Blanc, Bleu, Vert, Rouge] + durée, puis retour automatique au programme
+const SHORTCUTS = [
+  { id: 'nourrissage', icon: '🐟', name: 'Nourrissage', dur: '00:15', vals: [25, 35, 20, 30], hint: 'Lumière douce' },
+  { id: 'entretien', icon: '🧽', name: 'Entretien', dur: '01:00', vals: [100, 100, 100, 100], hint: 'Pleine lumière' },
+  { id: 'photo', icon: '📷', name: 'Photo', dur: '00:30', vals: [90, 55, 85, 100], hint: 'Couleurs vives' },
+  { id: 'lune', icon: '🌙', name: 'Clair de lune', dur: '01:00', vals: [0, 6, 0, 0], hint: 'Observer la nuit' },
+];
+const durLabel = (d) => DUR.find((x) => x[0] === d)?.[1] || d;
+
+function buildNow() {
+  $('#legendNow').innerHTML = channels.map((c) => `<span><i style="background:${c.color}"></i>${c.name}</span>`).join('');
+  $('#meters').innerHTML = channels.map((c, i) => `
+    <div class="meter"><div class="lbl"><i style="background:${c.color}"></i>${c.name}</div>
+    <div class="val" id="mv${i}">–<small>%</small></div><div class="bar"><div id="mb${i}" style="background:${c.color};width:0"></div></div></div>`).join('');
+  $('#sliders').innerHTML = channels.map((c, i) => `
+    <div class="slider-row"><label for="sl${i}"><i style="background:${c.color}"></i>${c.name}</label>
+    <input type="range" min="0" max="100" id="sl${i}" style="--c:${c.color}"><output id="so${i}">0</output></div>`).join('');
+  channels.forEach((c, i) => {
+    const sl = $('#sl' + i);
+    sl.addEventListener('input', () => { $('#so' + i).textContent = sl.value; hold(); sendColor(); });
+  });
+  $('#presets').innerHTML = PRESETS.map(([n, v], k) => {
+    const c = lightColor(toCh(v));
+    return `<button class="btn sm preset" data-p="${k}"><i style="background:${c.level ? c.css : '#23414c'}"></i>${n}</button>`;
+  }).join('');
+  $$('#presets button').forEach((b) => b.onclick = () => applyManual(toCh(PRESETS[b.dataset.p][1])));
+
+  $('#shortcuts').innerHTML = SHORTCUTS.map((sc) => {
+    const c = lightColor(toCh(sc.vals));
+    const bg = c.level ? `color-mix(in srgb, ${c.css} 22%, transparent)` : '#23414c';
+    return `<button class="sc" data-id="${sc.id}"><span class="ic" style="background:${bg}">${sc.icon}</span><span><b>${sc.name}</b><small id="scs-${sc.id}">${sc.hint} · ${durLabel(sc.dur)}</small></span></button>`;
+  }).join('');
+  $$('#shortcuts .sc').forEach((b) => b.onclick = () => runShortcut(SHORTCUTS.find((s) => s.id === b.dataset.id)));
+}
+
+function hold(ms = 2500) { S.holdUntil = Date.now() + ms; }
+
+// Une seule requête couleur en vol ; la dernière valeur gagne
+let colorBusy = false, colorNext = null;
+async function sendColor(vals = channels.map((c, i) => +$('#sl' + i).value)) {
+  colorNext = vals;
+  if (colorBusy) return;
+  colorBusy = true;
+  while (colorNext) {
+    const v = colorNext;
+    colorNext = null;
+    try { await api('color', { action: 1, ch: v }); } catch (e) { toast(e.message, true); }
+  }
+  colorBusy = false;
+}
+
+// Passe en manuel (si besoin) puis applique une couleur ; la réponse du statut
+// renvoie encore les anciennes valeurs, d'où l'envoi explicite de `v`
+async function applyManual(v, dur) {
+  const wasOn = $('#cswi').checked, prevDur = $('#ctime').value;
+  if (dur) $('#ctime').value = dur;
+  $('#cswi').checked = true;
+  $('#tswi').checked = false;
+  renderModes();
+  if (!wasOn) await sendStat(14);
+  else if (dur && dur !== prevDur) await sendStat(15);
+  channels.forEach((c, i) => { $('#sl' + i).value = v[i]; $('#so' + i).textContent = v[i]; });
+  hold(4000);
+  await sendColor(v);
+}
+
+async function runShortcut(sc) {
+  const now = deviceMinutes();
+  S.sc = { id: sc.id, end: now == null ? null : (now + parseHM(sc.dur)) % 1440 };
+  await applyManual(toCh(sc.vals), sc.dur);
+  renderModes();
+}
+
+function statBody(action) {
+  return {
+    action,
+    stime: +$('#stime').value,
+    tswi: $('#tswi').checked,
+    ttime: $('#ttime').value,
+    cswi: $('#cswi').checked,
+    ctime: $('#ctime').value,
+  };
+}
+async function sendStat(action) {
+  hold();
+  try { applyStatus(await api('stat', statBody(action)), true); } catch (e) { toast(e.message, true); }
+}
+
+$('#cswi').onchange = () => { if ($('#cswi').checked) $('#tswi').checked = false; renderModes(); sendStat(14); };
+$('#tswi').onchange = () => { if ($('#tswi').checked) $('#cswi').checked = false; renderModes(); sendStat(12); };
+$('#ctime').onchange = () => { renderModes(); sendStat(15); };
+$('#ttime').onchange = () => { renderModes(); sendStat(13); };
+const sendSim = debounce(() => sendStat(11), 120);
+$('#stime').addEventListener('input', () => { hold(); $('#simClock').textContent = fmt(+$('#stime').value); renderNowChart(); sendSim(); });
+
+let playT = null;
+$('#simPlay').onclick = async () => {
+  if (playT) return stopPlay();
+  $('#simPlay').textContent = '■ Arrêter';
+  let m = 0;
+  playT = setInterval(() => {
+    m += 10;
+    if (m > 1439) return stopPlay();
+    $('#stime').value = m; $('#simClock').textContent = fmt(m); renderNowChart();
+    hold(1500);
+    api('stat', statBody(11)).catch(() => {});
+  }, 350);
+};
+function stopPlay() { clearInterval(playT); playT = null; $('#simPlay').textContent = '▶ Journée accélérée'; }
+
+function renderModes() {
+  const c = $('#cswi').checked, t = $('#tswi').checked;
+  $('#sliders').classList.toggle('disabled', !c);
+  $('#simBody').classList.toggle('disabled', !t);
+  if (!c) S.sc = null;
+  const sc = S.sc && SHORTCUTS.find((x) => x.id === S.sc.id);
+  const b = $('#modeBadge');
+  b.className = 'badge' + (c ? ' manual' : t ? ' sim' : '');
+  b.textContent = c ? `${sc ? sc.name : 'Manuel'} · ${$('#ctime').selectedOptions[0]?.text}` : t ? `Simulation · ${$('#ttime').selectedOptions[0]?.text}` : 'Programme automatique';
+  $('#scResume').hidden = !c && !t;
+  SHORTCUTS.forEach((x) => {
+    const el = $(`.sc[data-id="${x.id}"]`);
+    if (!el) return;
+    const on = sc === x;
+    el.classList.toggle('on', on);
+    $('#scs-' + x.id).textContent = on ? (S.sc.end != null ? `Actif · jusqu'à ${fmt(S.sc.end)}` : 'Actif') : `${x.hint} · ${durLabel(x.dur)}`;
+  });
+  if (!t) stopPlay();
+}
+
+$('#scResume').onclick = async () => {
+  const c = $('#cswi').checked, t = $('#tswi').checked;
+  $('#cswi').checked = false;
+  $('#tswi').checked = false;
+  renderModes();
+  if (c) await sendStat(14);
+  if (t) await sendStat(12);
+  toast('Retour au programme automatique');
+};
+
+const deviceMinutes = () => (S.st?.S?.dtime ? parseHM(S.st.S.dtime) : null);
+
+function renderNowChart() {
+  if (!S.ov) return;
+  const sim = $('#tswi').checked ? +$('#stime').value : null;
+  drawChart($('#chartNow'), S.ov.active, { now: deviceMinutes(), sim, band: true });
+  const key = JSON.stringify(S.ov.active);
+  if (key !== S.statsKey) { S.statsKey = key; renderStats($('#statsNow'), S.ov.active); }
+}
+
+function applyStatus(st, force = false) {
+  S.st = st;
+  const s = st.S || {}, vals = (st.C?.ch || []).slice(0, channels.length);
+  $('#clock').textContent = s.dtime || '--:--';
+  renderAquarium(vals);
+  vals.forEach((v, i) => { $('#mv' + i).innerHTML = `${v}<small>%</small>`; $('#mb' + i).style.width = v + '%'; });
+  const avg = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+  $('#heroTotal').textContent = vals.length ? (avg ? `Intensité moyenne ${avg} %` : 'Lumière éteinte') : '';
+
+  if (force || Date.now() > S.holdUntil) {
+    $('#cswi').checked = isOn(s.cswi);
+    $('#tswi').checked = isOn(s.tswi);
+    for (const id of ['ctime', 'ttime']) {
+      const sel = $('#' + id);
+      if (!s[id]) continue;
+      if (![...sel.options].some((o) => o.value === s[id])) sel.add(new Option(s[id], s[id]));
+      sel.value = s[id];
+    }
+    if (s.stime != null && !playT) { $('#stime').value = s.stime; $('#simClock').textContent = fmt(+s.stime); }
+    vals.forEach((v, i) => { $('#sl' + i).value = v; $('#so' + i).textContent = v; });
+    renderModes();
+  }
+  renderNowChart();
+  updateDrift();
+  renderHomeLight();
+}
+
+let pollT, failCount = 0;
+async function poll() {
+  clearTimeout(pollT);
+  if (!S.ov) return;
+  if (!document.hidden) {
+    try { applyStatus(await api('status')); failCount = 0; setConn(true); }
+    catch { if (++failCount > 1) setConn(false); }
+  }
+  pollT = setTimeout(poll, 2000);
+}
+function setConn(ok) {
+  const c = $('#conn');
+  c.className = 'conn ' + (ok ? 'on' : 'off');
+  c.querySelector('span').textContent = ok ? `HeliaLux · ${S.ov?.device || ''}` : 'Contrôleur injoignable';
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
+
+// ---------------------------------------------------------------- AQUARIUM VIRTUEL
+function buildAquarium() {
+  let seed = 7;
+  const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  const blade = (x, h, w, col, cls) => {
+    const bend = (rnd() - 0.5) * 40;
+    return `<path class="plant ${cls}" style="animation-delay:-${(rnd() * 6).toFixed(1)}s" d="M${x.toFixed(1)},300 Q${(x + bend).toFixed(1)},${300 - h * 0.6} ${(x + bend * 1.6).toFixed(1)},${300 - h}" stroke="${col}" stroke-width="${w.toFixed(1)}" fill="none" stroke-linecap="round"/>`;
+  };
+  let back = '', front = '', fishes = '', bubbles = '', beams = '';
+  for (let i = 0; i < 26; i++) back += blade(rnd() * 400, 90 + rnd() * 130, 4 + rnd() * 4, '#1f5f3a', '');
+  for (let i = 0; i < 14; i++) front += blade(rnd() < 0.5 ? rnd() * 110 : 290 + rnd() * 110, 60 + rnd() * 90, 6 + rnd() * 4, '#3f9a4a', 'f');
+  const fish = (y, dur, delay, col, dir, s) => `<g class="fish ${dir}" style="animation-duration:${dur}s;animation-delay:-${delay}s"><g transform="translate(0 ${y}) scale(${dir === 'l' ? -s : s} ${s})">
+    <path d="M0,0 q10,-7 22,0 q-12,7 -22,0z" fill="${col}"/><path d="M1,0 l-8,-6 v12z" fill="${col}"/>
+    <path d="M5,-1 h12" stroke="#e5484d" stroke-width="2" opacity=".85"/><circle cx="18" cy="-1.5" r="1.3" fill="#02121a"/></g></g>`;
+  // Petits bancs de néons
+  for (let i = 0; i < 9; i++) fishes += fish(110 + rnd() * 70, 18 + rnd() * 4, i * 0.9 + rnd(), '#9fd8ec', 'r', 0.8);
+  for (let i = 0; i < 5; i++) fishes += fish(60 + rnd() * 50, 26 + rnd() * 6, i * 1.4 + rnd() * 8, '#f2b54a', 'l', 1);
+  for (let i = 0; i < 8; i++) {
+    const x = 330 + rnd() * 30, r = 1.5 + rnd() * 2.5;
+    bubbles += `<circle class="bubble" cx="${x.toFixed(1)}" cy="290" r="${r.toFixed(1)}" fill="none" stroke="#d9f3ff" stroke-width=".8" style="animation-duration:${(4 + rnd() * 3).toFixed(1)}s;animation-delay:-${(rnd() * 6).toFixed(1)}s"/>`;
+  }
+  for (const [x, w, d] of [[40, 50, 0], [150, 35, 2], [230, 60, 1], [330, 40, 3]]) {
+    beams += `<polygon class="beam" style="animation-delay:-${d}s" points="${x},0 ${x + w},0 ${x + w * 2.2},300 ${x + w * 0.6},300" fill="url(#aqBeam)"/>`;
+  }
+  $('#aqua').innerHTML = `<defs>
+      <linearGradient id="aqWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a7f96"/><stop offset="1" stop-color="#0a3340"/></linearGradient>
+      <linearGradient id="aqBeam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <linearGradient id="aqSand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d8c08a"/><stop offset="1" stop-color="#8a7550"/></linearGradient>
+    </defs>
+    <rect width="400" height="300" fill="url(#aqWater)"/>
+    <g>${back}</g>
+    <path d="M0,268 Q60,254 130,264 T260,262 T400,258 V300 H0Z" fill="url(#aqSand)"/>
+    <ellipse cx="300" cy="268" rx="34" ry="18" fill="#5f6a74"/><ellipse cx="332" cy="275" rx="20" ry="11" fill="#77838d"/><ellipse cx="80" cy="275" rx="22" ry="10" fill="#66707a"/>
+    ${fishes}
+    <g>${front}</g>
+    ${bubbles}
+    <rect id="aqTint" width="400" height="300"/>
+    <rect id="aqDark" width="400" height="300"/>
+    <g id="aqBeams">${beams}</g>
+    <rect width="400" height="5" fill="#d6f2fa" opacity=".3"/>`;
+}
+
+// La lumière filtre la scène (multiplication par sa teinte), l'obscurité dépend de l'intensité
+function renderAquarium(vals) {
+  const tint = $('#aqTint');
+  if (!tint || !channels.length) return;
+  const v = vals.slice(0, channels.length);
+  const level = v.length ? Math.max(...v) / 100 : 0;
+  let r = 0, g = 0, b = 0;
+  v.forEach((x, i) => { const w = x / 100; r += channels[i].rgb[0] * w; g += channels[i].rgb[1] * w; b += channels[i].rgb[2] * w; });
+  const mx = Math.max(r, g, b);
+  const c = mx ? [r, g, b].map((x) => Math.round((x / mx) * 255)) : [60, 80, 110];
+  tint.style.fill = `rgb(${c})`;
+  $('#aqDark').style.fill = `rgb(${c.map((x) => Math.round(x * 0.05))})`;
+  $('#aqDark').style.opacity = (0.93 * Math.pow(1 - level, 1.3)).toFixed(3);
+  $('#aqBeams').style.opacity = (0.5 * level).toFixed(3);
+}
+
+$('#aquaPlay').onclick = () => document.querySelector('[data-tab=sim]').click();
+
+// ---------------------------------------------------------------- PROFILS
+// Profils d'usine Juwel (repris de defaults.js du contrôleur, version 4 canaux)
+const TEMPLATES = [
+  { name: 'Standard', times: [0, 420, 480, 510, 720, 735, 885, 900, 1170, 1200, 1290, 1439],
+    ch: [[0, 0, 30, 100, 100, 30, 30, 100, 100, 30, 0, 0], [5, 5, 15, 50, 50, 30, 30, 50, 50, 20, 5, 5], [0, 0, 60, 100, 100, 30, 30, 100, 100, 50, 0, 0], [0, 0, 80, 100, 100, 30, 30, 100, 100, 80, 0, 0]] },
+  { name: 'Standard sans pause de midi', times: [0, 480, 540, 600, 615, 1080, 1095, 1140, 1290, 1439],
+    ch: [[0, 0, 0, 30, 100, 100, 30, 0, 0, 0], [0, 0, 5, 15, 50, 50, 15, 5, 0, 0], [0, 0, 0, 60, 100, 100, 60, 0, 0, 0], [0, 0, 0, 80, 100, 100, 80, 0, 0, 0]] },
+  { name: 'Biotope Malawi/Tanganyika', times: [0, 180, 360, 375, 390, 1080, 1095, 1110, 1320, 1439],
+    ch: [[0, 0, 0, 20, 60, 60, 20, 0, 0, 0], [0, 0, 5, 30, 80, 80, 35, 5, 0, 0], [0, 0, 0, 35, 50, 50, 30, 0, 0, 0], [0, 0, 0, 50, 50, 50, 50, 0, 0, 0]] },
+  { name: 'Biotope Amazone', times: [0, 390, 405, 420, 735, 780, 945, 990, 1095, 1110, 1125, 1290, 1439],
+    ch: [[0, 0, 30, 100, 100, 30, 30, 100, 100, 30, 0, 0, 0], [0, 0, 15, 20, 20, 20, 20, 20, 20, 20, 5, 0, 0], [0, 0, 60, 100, 100, 30, 30, 100, 100, 50, 0, 0, 0], [0, 0, 80, 100, 100, 30, 30, 100, 100, 80, 0, 0, 0]],
+    cI: [0, 0, 0, 0, 0, 1, 3, 1, 0, 0, 0, 0, 0], cM: [0, 0, 0, 0, 0, 1, 3, 2, 0, 0, 0, 0, 0] },
+  { name: 'Aquascape', times: [0, 480, 540, 570, 1200, 1260, 1350, 1439],
+    ch: [[0, 0, 30, 100, 100, 30, 0, 0], [0, 0, 5, 80, 80, 5, 5, 0], [0, 0, 60, 100, 100, 50, 0, 0], [0, 0, 80, 100, 100, 80, 0, 0]] },
+];
+$('#tplSelect').innerHTML += TEMPLATES.map((t, i) => `<option value="${i}">${t.name}</option>`).join('');
+
+const E = { num: null, orig: null, p: null, sel: 1, active: 0, preview: false };
+const todayIdx = () => (new Date().getDay() + 6) % 7;
+
+function buildChips() {
+  const todayProf = S.ov.week[todayIdx()];
+  $('#profChips').innerHTML = S.ov.profiles.map((n, i) => `
+    <button class="chip ${E.num === i ? 'on' : ''}" data-n="${i}"><b>P${i + 1}${i === todayProf ? ' · <span class="today">aujourd\'hui</span>' : ''}</b>${escapeHtml(n)}</button>`).join('');
+  $$('#profChips .chip').forEach((b) => b.onclick = () => openProfile(+b.dataset.n));
+  $('#edCopy').innerHTML = '<option value="">Copier vers…</option>' +
+    S.ov.profiles.map((n, i) => (i === E.num ? '' : `<option value="${i}">P${i + 1} · ${escapeHtml(n)}</option>`)).join('');
+  const cv = $('#edCompare').value;
+  $('#edCompare').innerHTML = '<option value="">Comparer avec…</option><optgroup label="Profils">' +
+    S.ov.profiles.map((n, i) => (i === E.num ? '' : `<option value="p${i}">P${i + 1} · ${escapeHtml(n)}</option>`)).join('') +
+    '</optgroup><optgroup label="Modèles Juwel">' + TEMPLATES.map((t, i) => `<option value="t${i}">${t.name}</option>`).join('') + '</optgroup>';
+  $('#edCompare').value = cv;
+}
+
+const isDirty = () => !!E.p && JSON.stringify(E.p) !== JSON.stringify(E.orig);
+const select = (k) => { if (E.sel !== k) { E.sel = k; renderEditor(); pushPreview(); } };
+
+async function openProfile(n) {
+  if (isDirty() && !confirm('Abandonner les modifications en cours ?')) return;
+  await stopPreview();
+  E.num = n;
+  E.cmp = null;
+  $('#edCompare').value = '';
+  buildChips();
+  try {
+    const p = await api('profile/' + n);
+    S.profCache[n] = p;
+    E.orig = { name: p.name, times: p.times, ch: p.ch, cI: p.cI, cM: p.cM };
+    E.p = clone(E.orig);
+    E.sel = Math.min(1, E.p.times.length - 1);
+    H.undo = [];
+    H.redo = [];
+    $('#editor').hidden = false;
+    $('#tplSelect').value = '';
+    renderEditor(true);
+  } catch (e) { toast(e.message, true); }
+}
+
+function renderEditor(rebuildTable = false) {
+  const p = E.p;
+  $('#edTitle').textContent = `Profil P${E.num + 1}`;
+  if (document.activeElement !== $('#edName')) $('#edName').value = p.name;
+  $('#edDirty').hidden = !isDirty();
+  $('#edSave').disabled = !isDirty();
+  $('#edUndo').disabled = !canUndo();
+  $('#edRedo').disabled = !H.redo.length;
+
+  const pick = [...channels.map((c, i) => [i, c.name, c.color]), [-1, 'Tous', '#38bdf8']];
+  $('#chPick').innerHTML = pick.map(([i, n, col]) => `<button class="${E.active === i ? 'on' : ''}" style="--c:${col}" data-i="${i}"${i === -1 ? ' title="Ajuste tous les canaux en gardant leurs proportions"' : ''}><i style="background:${col}"></i>${n}</button>`).join('');
+  $$('#chPick button').forEach((b) => b.onclick = () => { E.active = +b.dataset.i; renderEditor(); });
+
+  drawChart($('#chartEd'), p, {
+    band: true,
+    compare: E.cmp?.p,
+    edit: {
+      active: E.active, sel: E.sel,
+      onSelect: select,
+      onDragStart: (k) => { snap(); E.drag = { t: E.p.times[k], vals: E.p.ch.map((a) => a[k]) }; },
+      onDrag: (k, dm, dv, lockTime) => {
+        const q = E.p, base = E.drag.vals.slice(0, channels.length);
+        if (E.active === -1) {
+          const mx = Math.max(...base), v = clamp(Math.round(mx + dv), 0, 100);
+          base.forEach((b, i) => (q.ch[i][k] = mx ? clamp(Math.round((b * v) / mx), 0, 100) : v));
+        } else q.ch[E.active][k] = clamp(Math.round(base[E.active] + dv), 0, 100);
+        if (!lockTime && k > 0 && k < q.times.length - 1) {
+          q.times[k] = clamp(Math.round((E.drag.t + dm) / 5) * 5, q.times[k - 1], q.times[k + 1]);
+        }
+        renderEditor(); pushPreview();
+      },
+      onAdd: addPhaseAt,
+    },
+  });
+  renderTable(rebuildTable);
+  renderStats($('#edStats'), p);
+  renderCmpInfo();
+  $('#phDel').disabled = E.sel === 0 || E.sel === p.times.length - 1;
+  $('#phAdd').disabled = p.times.length >= 16;
+  $('#edSmooth').disabled = p.times.length > 14;
+}
+
+function renderTable(rebuild) {
+  const p = E.p, n = p.times.length, tbl = $('#phTable');
+  // Pendant une saisie clavier dans le tableau, on met à jour les valeurs sans reconstruire
+  if (!rebuild && tbl.contains(document.activeElement)) {
+    $$('tr[data-k]', tbl).forEach((tr) => {
+      const k = +tr.dataset.k;
+      tr.classList.toggle('sel', k === E.sel);
+      $$('[data-f]', tr).forEach((inp) => {
+        if (inp === document.activeElement) return;
+        const f = inp.dataset.f;
+        if (f === 't') inp.value = fmt(p.times[k]);
+        else if (f === 'ci') inp.value = p.cI[k];
+        else if (f === 'cm') inp.value = p.cM[k];
+        else inp.value = p.ch[+f.slice(1)][k];
+      });
+    });
+    return;
+  }
+  const cloudOpts = (v) => [0, 1, 2, 3].map((x) => `<option ${x === v ? 'selected' : ''}>${x}</option>`).join('');
+  const head = `<tr><th>Heure</th>${channels.map((c) => `<th><span class="th-dot" style="background:${c.color}"></span> ${c.name}</th>`).join('')}<th title="Intensité des nuages (0-3)">☁ Nuages</th><th title="Mouvement des nuages (0-3)">Vitesse</th></tr>`;
+  const rows = p.times.map((m, k) => {
+    const fixed = k === 0 || k === n - 1;
+    return `<tr data-k="${k}" class="${k === E.sel ? 'sel' : ''}">
+      <td>${fixed ? `<span style="font-family:var(--mono);padding:0 8px;color:var(--muted)">${k === 0 ? '00:00' : '23:59'}</span>` : `<input type="time" value="${fmt(m)}" data-f="t">`}</td>
+      ${channels.map((c, i) => `<td><input type="number" min="0" max="100" value="${p.ch[i][k]}" data-f="c${i}"></td>`).join('')}
+      <td><select data-f="ci">${cloudOpts(p.cI[k])}</select></td>
+      <td><select data-f="cm">${cloudOpts(p.cM[k])}</select></td></tr>`;
+  }).join('');
+  tbl.innerHTML = head + rows;
+  $$('tr[data-k]', tbl).forEach((tr) => {
+    const k = +tr.dataset.k;
+    tr.addEventListener('focusin', () => select(k));
+    tr.addEventListener('click', () => select(k));
+    $$('[data-f]', tr).forEach((inp) => {
+      const f = inp.dataset.f;
+      // Un point d'annulation par champ édité, pas par frappe
+      inp.addEventListener('focus', () => (inp._snapped = false));
+      inp.addEventListener(f === 't' ? 'change' : 'input', () => {
+        if (!inp._snapped) { snap(); inp._snapped = true; }
+        if (f === 't') {
+          if (!inp.value) return;
+          p.times[k] = clamp(parseHM(inp.value), 1, 1438);
+          sortPhases(k);
+          inp.blur();
+          renderEditor(true);
+        } else {
+          if (f === 'ci') p.cI[k] = +inp.value;
+          else if (f === 'cm') p.cM[k] = +inp.value;
+          else p.ch[+f.slice(1)][k] = clamp(Math.round(+inp.value || 0), 0, 100);
+          renderEditor();
+        }
+        pushPreview();
+      });
+    });
+  });
+}
+
+function sortPhases(k) {
+  const p = E.p;
+  const rows = p.times.map((t, i) => ({ t, c: p.ch.map((a) => a[i]), ci: p.cI[i], cm: p.cM[i], me: i === k }));
+  const first = rows.shift(), last = rows.pop();
+  rows.sort((a, b) => a.t - b.t);
+  const all = [first, ...rows, last];
+  p.times = all.map((r) => r.t);
+  p.ch = p.ch.map((_, i) => all.map((r) => r.c[i]));
+  p.cI = all.map((r) => r.ci);
+  p.cM = all.map((r) => r.cm);
+  E.sel = all.findIndex((r) => r.me);
+}
+
+function addPhaseAt(m) {
+  const p = E.p;
+  if (p.times.length >= 16) return toast('16 phases maximum', true);
+  snap();
+  m = clamp(m, 1, 1438);
+  let k = p.times.findIndex((t) => t > m);
+  if (k <= 0) k = p.times.length - 1;
+  const vals = p.ch.map((a) => Math.round(interp(p.times, a, m)));
+  p.times.splice(k, 0, m);
+  p.ch.forEach((a, i) => a.splice(k, 0, vals[i]));
+  p.cI.splice(k, 0, p.cI[k - 1]);
+  p.cM.splice(k, 0, p.cM[k - 1]);
+  E.sel = k;
+  renderEditor(true); pushPreview();
+}
+
+$('#phAdd').onclick = () => {
+  const p = E.p, a = Math.min(E.sel, p.times.length - 2);
+  addPhaseAt(Math.round((p.times[a] + p.times[a + 1]) / 2 / 5) * 5);
+};
+$('#phDel').onclick = () => {
+  const p = E.p, k = E.sel;
+  if (k === 0 || k === p.times.length - 1) return;
+  snap();
+  p.times.splice(k, 1); p.ch.forEach((a) => a.splice(k, 1)); p.cI.splice(k, 1); p.cM.splice(k, 1);
+  E.sel = Math.max(0, k - 1);
+  renderEditor(true); pushPreview();
+};
+$('#edName').addEventListener('focus', () => ($('#edName')._snapped = false));
+$('#edName').addEventListener('input', () => {
+  if (!$('#edName')._snapped) { snap(); $('#edName')._snapped = true; }
+  E.p.name = $('#edName').value;
+  renderEditor();
+});
+$('#edCancel').onclick = () => { snap(); E.p = clone(E.orig); E.sel = Math.min(E.sel, E.p.times.length - 1); renderEditor(true); pushPreview(); };
+$('#tplSelect').onchange = () => {
+  const t = TEMPLATES[$('#tplSelect').value];
+  if (!t) return;
+  const n = t.times.length;
+  snap();
+  E.p = { name: E.p.name, times: [...t.times], ch: clone(t.ch), cI: t.cI ? [...t.cI] : Array(n).fill(0), cM: t.cM ? [...t.cM] : Array(n).fill(0) };
+  E.sel = 1;
+  renderEditor(true); pushPreview();
+  toast(`Modèle « ${t.name} » chargé — pensez à enregistrer`);
+};
+$('#edSave').onclick = async () => {
+  const btn = $('#edSave');
+  btn.disabled = true; btn.textContent = 'Enregistrement…';
+  const sent = { ...E.p, name: E.p.name.trim() };
+  try {
+    await stopPreview();
+    const p = await api('profile/' + E.num, sent);
+    S.profCache[E.num] = p;
+    E.orig = { name: p.name, times: p.times, ch: p.ch, cI: p.cI, cM: p.cM };
+    E.p = clone(E.orig);
+    S.ov = await api('overview');
+    buildChips(); renderNowChart();
+    $('#heroProf').textContent = S.ov.active.name;
+    const ok = JSON.stringify(E.orig) === JSON.stringify(sent);
+    toast(ok ? 'Profil enregistré ✓' : 'Enregistré, mais le contrôleur a renvoyé des valeurs différentes', !ok);
+  } catch (e) { toast(e.message, true); }
+  btn.textContent = 'Enregistrer sur le contrôleur';
+  renderEditor(true);
+};
+
+// --- Annuler / rétablir ---
+// `undo` contient les états précédant chaque modification ; snap() est appelé juste avant de modifier E.p
+const H = { undo: [], redo: [] };
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+function snap() {
+  const top = H.undo[H.undo.length - 1];
+  if (top && same(top, E.p)) return;
+  H.undo.push(clone(E.p));
+  if (H.undo.length > 100) H.undo.shift();
+  H.redo = [];
+}
+const canUndo = () => H.undo.length > 1 || (H.undo.length === 1 && !same(H.undo[0], E.p));
+function restore(state) {
+  E.p = state;
+  E.sel = clamp(E.sel, 0, E.p.times.length - 1);
+  renderEditor(true); pushPreview();
+}
+function undo() {
+  while (H.undo.length && same(H.undo[H.undo.length - 1], E.p)) H.undo.pop();
+  if (!H.undo.length) return;
+  H.redo.push(clone(E.p));
+  restore(H.undo.pop());
+}
+function redo() {
+  if (!H.redo.length) return;
+  H.undo.push(clone(E.p));
+  restore(H.redo.pop());
+}
+$('#edUndo').onclick = undo;
+$('#edRedo').onclick = redo;
+document.addEventListener('keydown', (ev) => {
+  if ($('#tab-prof').hidden || !E.p || $('#wizard').open || !(ev.metaKey || ev.ctrlKey)) return;
+  const a = document.activeElement;
+  if (a?.tagName === 'INPUT' && !['checkbox', 'range'].includes(a.type)) return; // annulation native du champ
+  const k = ev.key.toLowerCase();
+  if (k === 'z' && !ev.shiftKey) { ev.preventDefault(); undo(); }
+  else if ((k === 'z' && ev.shiftKey) || k === 'y') { ev.preventDefault(); redo(); }
+});
+
+// --- Adoucir une transition : points intermédiaires en courbe en S ---
+$('#edSmooth').onclick = () => {
+  const p = E.p;
+  const a = Math.min(E.sel, p.times.length - 2);
+  const t0 = p.times[a], t1 = p.times[a + 1];
+  const n = Math.min(3, 16 - p.times.length);
+  if (n < 2) return toast('Pas assez de phases libres (16 maximum)', true);
+  if (t1 - t0 < 20) return toast('Transition trop courte pour être adoucie (20 min minimum)', true);
+  if (p.ch.every((c) => c[a] === c[a + 1])) return toast('Aucune variation à adoucir après la phase sélectionnée', true);
+  snap();
+  const from = p.ch.map((c) => c[a]), to = p.ch.map((c) => c[a + 1]);
+  const ease = (t) => t * t * (3 - 2 * t);
+  for (let j = 1; j <= n; j++) {
+    const t = j / (n + 1), k = a + j;
+    p.times.splice(k, 0, Math.round(t0 + (t1 - t0) * t));
+    p.ch.forEach((c, i) => c.splice(k, 0, Math.round(from[i] + (to[i] - from[i]) * ease(t))));
+    p.cI.splice(k, 0, p.cI[a]);
+    p.cM.splice(k, 0, p.cM[a]);
+  }
+  renderEditor(true); pushPreview();
+  toast(`Transition ${fmt(t0)} → ${fmt(t1)} adoucie (${n} points ajoutés)`);
+};
+
+// --- Assistant journée ---
+// Facteurs [1er tiers, 2e tiers] de la rampe : bleu et rouge montent avant le blanc (aube)
+const DAWN = { W: [0.05, 0.45], B: [0.35, 0.75], G: [0.05, 0.45], R: [0.4, 0.8] };
+function plateauRatios() {
+  const p = E.p;
+  let best = -1, bk = 0;
+  p.times.forEach((_, k) => {
+    const s = channels.reduce((acc, c, i) => acc + p.ch[i][k], 0);
+    if (s > best) { best = s; bk = k; }
+  });
+  const v = channels.map((c, i) => p.ch[i][bk]);
+  const mx = Math.max(...v);
+  return mx ? v.map((x) => x / mx) : toCh([1, 0.5, 0.8, 0.9]);
+}
+function wizardProfile() {
+  const on = parseHM($('#wzOn').value || '00:00'), off = parseHM($('#wzOff').value || '00:00');
+  const r = +$('#wzRamp').value, max = +$('#wzMax').value, siesta = +$('#wzSiesta').value, moon = +$('#wzMoon').value;
+  if (!(on >= 5 && off <= 1434 && on + r < off - r)) throw new Error('Horaires incohérents : la fin du coucher doit être après le lever + 2 transitions.');
+  const night = channels.map((c) => (c.key === 'B' ? moon : 0));
+  const full = plateauRatios().map((x) => Math.round(x * max));
+  const step = (f) => channels.map((c, i) => Math.max(night[i], Math.round(full[i] * DAWN[c.key][f])));
+  const pts = [[0, night], [on, night], [on + Math.round(r / 3), step(0)], [on + Math.round((2 * r) / 3), step(1)], [on + r, full]];
+  if (siesta) {
+    const a = on + r, b = off - r;
+    if (b - a < siesta + 60) throw new Error('Journée trop courte pour cette pause de midi.');
+    const mid = Math.round((a + b) / 10) * 5, low = full.map((x, i) => Math.max(night[i], Math.round(x * 0.3)));
+    const s0 = mid - siesta / 2, s1 = mid + siesta / 2;
+    pts.push([s0, full], [s0 + 20, low], [s1 - 20, low], [s1, full]);
+  }
+  pts.push([off - r, full], [off - Math.round((2 * r) / 3), step(1)], [off - Math.round(r / 3), step(0)], [off, night], [1439, night]);
+  const n = pts.length;
+  return {
+    name: E.p.name,
+    times: pts.map((x) => x[0]),
+    ch: [0, 1, 2, 3].map((i) => pts.map((x) => x[1][i] ?? 0)),
+    cI: Array(n).fill(0),
+    cM: Array(n).fill(0),
+  };
+}
+function wizardUpdate() {
+  try {
+    const g = wizardProfile(), s = profileStats(g);
+    $('#wzInfo').textContent = `${g.times.length} phases · éclairage ${fmtDur(s.lit)} · pleine lumière ${fmtDur(s.strong)}`;
+    $('#wzInfo').style.color = '';
+    $('#wzOk').disabled = false;
+  } catch (e) {
+    $('#wzInfo').textContent = e.message;
+    $('#wzInfo').style.color = 'var(--danger)';
+    $('#wzOk').disabled = true;
+  }
+}
+$('#edWizard').onclick = () => {
+  const s = profileStats(E.p);
+  if (s.first != null) {
+    $('#wzOn').value = fmt(clamp(Math.round(s.first / 5) * 5, 5, 1430));
+    $('#wzOff').value = fmt(clamp(Math.round(s.last / 5) * 5, 5, 1430));
+  }
+  wizardUpdate();
+  $('#wizard').showModal();
+};
+$$('#wizard input, #wizard select').forEach((x) => x.addEventListener('input', wizardUpdate));
+$('#wzCancel').onclick = () => $('#wizard').close();
+$('#wzOk').onclick = () => {
+  try {
+    const g = wizardProfile();
+    snap();
+    E.p = g;
+    E.sel = 1;
+    $('#wizard').close();
+    renderEditor(true); pushPreview();
+    toast('Profil généré : vérifiez puis enregistrez');
+  } catch (e) { toast(e.message, true); }
+};
+
+// --- Comparer avec un autre profil ou un modèle (pointillés) ---
+$('#edCompare').onchange = async () => {
+  const v = $('#edCompare').value;
+  E.cmp = null;
+  try {
+    if (v[0] === 't') {
+      const t = TEMPLATES[+v.slice(1)];
+      E.cmp = { label: `Modèle ${t.name}`, p: { times: t.times, ch: t.ch } };
+    } else if (v[0] === 'p') {
+      const n = +v.slice(1);
+      const p = S.profCache[n] || (S.profCache[n] = await api('profile/' + n));
+      E.cmp = { label: `P${n + 1} · ${p.name}`, p };
+    }
+  } catch (e) {
+    toast(e.message, true);
+    $('#edCompare').value = '';
+  }
+  renderEditor();
+};
+function renderCmpInfo() {
+  const el = $('#edCmpInfo');
+  if (!E.cmp) { el.textContent = ''; return; }
+  const a = profileStats(E.p), b = profileStats(E.cmp.p);
+  const diff = (x, y) => (x === y ? '=' : `${x > y ? '+' : '−'}${fmtDur(Math.abs(x - y))}`);
+  el.innerHTML = `Pointillés : <b>${escapeHtml(E.cmp.label)}</b> · éclairage ${fmtDur(b.lit)} · pleine lumière ${fmtDur(b.strong)} · dose ${b.dose.toFixed(1)} h
+    <br>Ce profil par rapport à lui : éclairage ${diff(a.lit, b.lit)}, pleine lumière ${diff(a.strong, b.strong)}, dose ${(a.dose - b.dose >= 0 ? '+' : '−') + Math.abs(a.dose - b.dose).toFixed(1)} h`;
+}
+
+// --- Copier vers un autre profil ---
+$('#edCopy').onchange = async () => {
+  const sel = $('#edCopy');
+  if (sel.value === '') return;
+  const to = +sel.value;
+  sel.value = '';
+  const name = E.p.name.trim();
+  if (!confirm(`Remplacer « P${to + 1} · ${S.ov.profiles[to]} » par une copie de « ${name} »${isDirty() ? ' (modifications en cours incluses)' : ''} ?`)) return;
+  try {
+    await stopPreview();
+    S.profCache[to] = await api('profile/' + to, { ...E.p, name });
+    S.ov = await api('overview');
+    buildChips(); renderNowChart();
+    toast(`Copié vers P${to + 1} ✓`);
+  } catch (e) { toast(e.message, true); }
+};
+
+// Aperçu en direct : mêmes actions que l'éditeur d'origine (20 = ouvrir, 5 = couleur, 21 = fermer)
+const previewSend = (action) => {
+  const p = E.p, k = E.sel;
+  return api('color', { action, ch: p.ch.map((a) => a[k]), cMOT: p.cM[k], cINT: p.cI[k] });
+};
+const pushPreview = debounce(() => { if (E.preview) previewSend(5).catch((e) => toast(e.message, true)); }, 80);
+async function stopPreview() {
+  if (!E.preview) return;
+  E.preview = false;
+  $('#edPreview').checked = false;
+  try { await previewSend(21); } catch {}
+}
+$('#edPreview').onchange = async () => {
+  if (!$('#edPreview').checked) return stopPreview();
+  E.preview = true;
+  try { await previewSend(20); await previewSend(5); } catch (e) { toast(e.message, true); }
+};
+window.addEventListener('beforeunload', (ev) => {
+  if (E.preview) {
+    const p = E.p, k = E.sel;
+    fetch('/api/color', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 21, ch: p.ch.map((a) => a[k]) }) });
+  }
+  if (isDirty() || wkDirty()) { ev.preventDefault(); ev.returnValue = ''; }
+});
+
+// ---------------------------------------------------------------- SEMAINE
+const DAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+let wk = null;
+const wkDirty = () => !!wk && JSON.stringify(wk) !== JSON.stringify(S.ov.week);
+
+function buildWeek() {
+  if (!wk) wk = [...S.ov.week];
+  const today = todayIdx();
+  $('#weekRows').innerHTML = DAYS.map((d, i) => `
+    <div class="week-row ${i === today ? 'today' : ''}">
+      <div class="day">${d}${i === today ? ' · aujourd\'hui' : ''}</div>
+      <select data-d="${i}">${S.ov.profiles.map((n, k) => `<option value="${k}" ${k === wk[i] ? 'selected' : ''}>P${k + 1} · ${escapeHtml(n)}</option>`).join('')}</select>
+      <svg class="chart small" id="wk${i}"></svg>
+    </div>`).join('');
+  $$('#weekRows select').forEach((s) => s.onchange = () => { wk[+s.dataset.d] = +s.value; buildWeek(); });
+  const qv = $('#wkProf').value;
+  $('#wkProf').innerHTML = S.ov.profiles.map((n, k) => `<option value="${k}">P${k + 1} · ${escapeHtml(n)}</option>`).join('');
+  $('#wkProf').value = qv || wk[0];
+  $('#wkDirty').hidden = !wkDirty();
+  $('#wkSave').disabled = !wkDirty();
+  drawWeekCharts();
+}
+async function drawWeekCharts() {
+  for (const n of new Set(wk)) {
+    if (!S.profCache[n]) {
+      try { S.profCache[n] = await api('profile/' + n); } catch { continue; }
+    }
+  }
+  wk.forEach((n, i) => { const svg = $('#wk' + i); if (S.profCache[n] && svg) drawChart(svg, S.profCache[n]); });
+}
+$('#wkCancel').onclick = () => { wk = [...S.ov.week]; buildWeek(); };
+$$('#wkQuick button').forEach((b) => b.onclick = () => {
+  const p = +$('#wkProf').value, r = b.dataset.r;
+  wk = wk.map((x, i) => (r === 'all' || (r === 'wd' && i < 5) || (r === 'we' && i >= 5) ? p : x));
+  buildWeek();
+});
+$('#wkSave').onclick = async () => {
+  $('#wkSave').disabled = true;
+  try {
+    const want = [...wk];
+    S.ov = await api('week', { week: want });
+    const ok = JSON.stringify(S.ov.week) === JSON.stringify(want);
+    wk = [...S.ov.week];
+    toast(ok ? 'Semaine enregistrée ✓' : 'Le contrôleur n\'a pas pris en compte la modification', !ok);
+    $('#heroProf').textContent = S.ov.active.name;
+    $('#heroNum').textContent = `Profil P${S.ov.active.num + 1}`;
+  } catch (e) { toast(e.message, true); }
+  buildWeek();
+};
+
+// ---------------------------------------------------------------- SIMULATION 3D
+// La page gère l'heure simulée, la timeline et les commandes ; sim3d.js ne fait que le rendu.
+const SIM = {
+  aq: null, loading: false, raf: 0, last: 0, hudAt: 0,
+  t: 0, playing: false, speed: 600, live: true, src: 'active', drag: false, rot: false,
+  mirrorOn: false, mirrorBusy: false, lastMirror: 0, bandKey: '', band: [],
+};
+
+function simProfile() {
+  if (SIM.src === 'draft' && E.p) return E.p;
+  if (SIM.src[0] === 'p' && S.profCache[+SIM.src.slice(1)]) return S.profCache[+SIM.src.slice(1)];
+  return S.ov.active;
+}
+const levelAt = (p, m) => Math.max(...channels.map((c, i) => interp(p.times, p.ch[i], clamp(m, 0, 1439))));
+
+// Lumière moyenne des 2 dernières heures : au-delà d'un seuil, les plantes « perlent »
+function doseAt(p, t) {
+  let s = 0;
+  for (let k = 0; k <= 12; k++) s += levelAt(p, (t - k * 10 + 1440) % 1440);
+  return s / 13 / 100;
+}
+function cloudsAt(p, t) {
+  let k = 0;
+  while (k < p.times.length - 1 && p.times[k + 1] <= t) k++;
+  return { i: p.cI?.[k] || 0, m: p.cM?.[k] || 0 };
+}
+function phaseLabel(p, t, vals) {
+  const l = Math.max(...vals);
+  const M = Math.max(...p.times.map((_, k) => Math.max(...channels.map((c, i) => p.ch[i][k]))));
+  const slope = levelAt(p, t + 10) - levelAt(p, t - 10);
+  const around = (ds) => Math.max(...ds.map((d) => levelAt(p, t + d)));
+  if (l < 0.5) return '🌑 Nuit noire';
+  if (l < 10) return '🌙 Veilleuse';
+  if (slope > 2) return around([-60, -120, -180]) > l + 10 ? '⛅ Fin de la pause de midi' : '🌅 Lever du jour';
+  if (slope < -2) return around([60, 120, 180]) > l + 10 ? '⛅ Début de la pause de midi' : '🌇 Coucher du soleil';
+  if (l < 0.6 * M) return '⛅ Pause de midi';
+  return '☀️ Plein jour';
+}
+
+async function openSim() {
+  buildSimSrc();
+  // Population modifiée dans « Mon bac » : on reconstruit la scène avec les nouveaux poissons
+  if (SIM.aq && SIM.rebuild) {
+    SIM.aq.dispose();
+    SIM.aq = null;
+  }
+  SIM.rebuild = false;
+  if (!SIM.aq && !SIM.loading) {
+    SIM.loading = true;
+    try {
+      const mod = await import('./sim3d.js');
+      const models = await api('models').catch(() => []);
+      if (!BAC.doc) await loadBac();
+      SIM.aq = mod.createAquarium3D($('#simView'), { channels, quality: SIM.hq ? 'high' : 'low', models, population: BAC.doc ? simPopulation() : undefined });
+      SIM.aq.setAutoRotate(SIM.rot);
+      $('#simMsg').hidden = true;
+      $('#simLife').hidden = false;
+    } catch (e) {
+      const network = /fetch|import|network/i.test(e.message);
+      $('#simMsg').textContent = `Impossible de charger la 3D (${e.message}).` +
+        (network ? ' La bibliothèque Three.js est chargée depuis Internet : vérifiez la connexion.' : '');
+      console.error(e);
+    }
+    SIM.loading = false;
+  }
+  if ($('#tab-sim').hidden) return; // onglet quitté pendant le chargement
+  SIM.aq?.pause(false);
+  if (!SIM.raf) {
+    SIM.last = 0;
+    SIM.raf = requestAnimationFrame(simTick);
+  }
+}
+function closeSim() {
+  SIM.aq?.pause(true);
+  cancelAnimationFrame(SIM.raf);
+  SIM.raf = 0;
+  stopMirror();
+}
+
+function buildSimSrc() {
+  const a = S.ov.active;
+  const opts = [`<option value="active">Programme du jour · P${a.num + 1} ${escapeHtml(a.name)}</option>`];
+  S.ov.profiles.forEach((n, i) => opts.push(`<option value="p${i}">P${i + 1} · ${escapeHtml(n)}</option>`));
+  if (isDirty()) opts.push(`<option value="draft">Brouillon de l'éditeur (P${E.num + 1}, non enregistré)</option>`);
+  if (SIM.src === 'draft' && !isDirty()) SIM.src = 'active';
+  $('#simSrc').innerHTML = opts.join('');
+  $('#simSrc').value = SIM.src;
+}
+$('#simSrc').onchange = async () => {
+  const v = $('#simSrc').value;
+  if (v[0] === 'p' && !S.profCache[+v.slice(1)]) {
+    try {
+      S.profCache[+v.slice(1)] = await api('profile/' + v.slice(1));
+    } catch (e) {
+      toast(e.message, true);
+      $('#simSrc').value = SIM.src;
+      return;
+    }
+  }
+  SIM.src = v;
+  if (v !== 'active') {
+    $('#simMirror').checked = false;
+    stopMirror();
+  }
+  setLive(false);
+};
+
+const updatePlayBtn = () => ($('#simPlayBtn').textContent = SIM.playing ? '❚❚' : '▶');
+function setLive(on) {
+  SIM.live = on;
+  $('#simLiveBtn').classList.toggle('on', on);
+  if (on) {
+    SIM.playing = false;
+    SIM.src = 'active';
+    $('#simSrc').value = 'active';
+    $('#simMirror').checked = false;
+    stopMirror();
+  }
+  updatePlayBtn();
+}
+$('#simLiveBtn').onclick = () => setLive(true);
+$('#simPlayBtn').onclick = () => {
+  if (SIM.live) setLive(false);
+  SIM.playing = !SIM.playing;
+  updatePlayBtn();
+};
+function jumpPhase(dir) {
+  setLive(false);
+  const ts = simProfile().times;
+  SIM.t = dir < 0 ? [...ts].reverse().find((t) => t < SIM.t - 0.5) ?? ts[ts.length - 1] : ts.find((t) => t > SIM.t + 0.5) ?? 0;
+}
+$('#simPrev').onclick = () => jumpPhase(-1);
+$('#simNext').onclick = () => jumpPhase(1);
+$$('#simSpeed button').forEach((b) => b.onclick = () => {
+  SIM.speed = +b.dataset.s;
+  $$('#simSpeed button').forEach((x) => x.classList.toggle('on', x === b));
+  if (SIM.live) setLive(false);
+  SIM.playing = true;
+  updatePlayBtn();
+});
+$$('.sim-cams [data-view]').forEach((b) => b.onclick = () => SIM.aq?.view(b.dataset.view));
+// Haute qualité par défaut sur grand écran, rendu économique sur téléphone
+SIM.hq = !matchMedia('(max-width: 700px)').matches;
+$('#simHQ').classList.toggle('on', SIM.hq);
+$('#simHQ').onclick = () => {
+  SIM.hq = !SIM.hq;
+  $('#simHQ').classList.toggle('on', SIM.hq);
+  SIM.aq?.setQuality(SIM.hq ? 'high' : 'low');
+};
+$('#simRotate').onclick = () => {
+  SIM.rot = !SIM.rot;
+  $('#simRotate').classList.toggle('on', SIM.rot);
+  SIM.aq?.setAutoRotate(SIM.rot);
+};
+document.addEventListener('keydown', (ev) => {
+  if ($('#tab-sim').hidden || ev.metaKey || ev.ctrlKey || ev.altKey) return;
+  if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(document.activeElement?.tagName)) return;
+  if (ev.key === ' ') {
+    ev.preventDefault();
+    $('#simPlayBtn').click();
+  } else if (ev.key === 'ArrowLeft' || ev.key === 'ArrowRight') {
+    ev.preventDefault();
+    if (SIM.live) setLive(false);
+    SIM.t = (SIM.t + (ev.shiftKey ? 60 : 15) * (ev.key === 'ArrowLeft' ? -1 : 1) + 1440) % 1440;
+  }
+});
+
+// Reproduire sur la lampe : utilise la simulation horaire du contrôleur (son profil actif uniquement)
+$('#simMirror').onchange = () => {
+  if (!$('#simMirror').checked) return stopMirror();
+  if (SIM.src !== 'active') {
+    $('#simMirror').checked = false;
+    return toast('Possible uniquement avec le programme du jour : le contrôleur ne simule que son profil actif', true);
+  }
+  if (SIM.live) setLive(false);
+};
+function stopMirror() {
+  if (!SIM.mirrorOn) return;
+  SIM.mirrorOn = false;
+  $('#tswi').checked = false;
+  renderModes();
+  sendStat(12);
+}
+function pushMirror(now) {
+  if (!$('#simMirror').checked || SIM.live || SIM.src !== 'active' || SIM.mirrorBusy || now - SIM.lastMirror < 1000) return;
+  SIM.lastMirror = now;
+  SIM.mirrorBusy = true;
+  const first = !SIM.mirrorOn;
+  SIM.mirrorOn = true;
+  $('#stime').value = Math.round(SIM.t) % 1440;
+  $('#tswi').checked = true;
+  $('#cswi').checked = false;
+  hold(3000);
+  api('stat', statBody(first ? 12 : 11))
+    .catch((e) => toast(e.message, true))
+    .finally(() => (SIM.mirrorBusy = false));
+}
+
+// Timeline : bande de couleur, courbes, repères de phase, « maintenant » et tête de lecture
+const TLP = 10;
+function drawTimeline() {
+  const cv = $('#simTL'), w = cv.clientWidth, h = cv.clientHeight, dpr = devicePixelRatio || 1;
+  if (!w) return;
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(h * dpr);
+  }
+  const g = cv.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+  const p = simProfile(), cw = w - 2 * TLP, X = (m) => TLP + (m / 1439) * cw, top = 4, bh = h - 22;
+  const key = JSON.stringify([p.times, p.ch]);
+  if (key !== SIM.bandKey) {
+    SIM.bandKey = key;
+    SIM.band = Array.from({ length: 144 }, (_, k) => lightRGB(channels.map((c, i) => interp(p.times, p.ch[i], (k + 0.5) * 10))));
+  }
+  SIM.band.forEach((col, k) => {
+    g.fillStyle = col;
+    g.fillRect(X(k * 10), top, cw / 144 + 0.6, bh);
+  });
+  g.globalAlpha = 0.6;
+  g.lineWidth = 1;
+  channels.forEach((c, i) => {
+    g.beginPath();
+    p.times.forEach((m, k) => {
+      const y = top + bh - (p.ch[i][k] / 100) * (bh - 2) - 1;
+      k ? g.lineTo(X(m), y) : g.moveTo(X(m), y);
+    });
+    g.strokeStyle = c.color;
+    g.stroke();
+  });
+  g.globalAlpha = 1;
+  g.fillStyle = '#8aa8b2';
+  g.font = '10px ui-monospace, Menlo, monospace';
+  g.textAlign = 'center';
+  for (let hh = 0; hh <= 24; hh += 6) g.fillText(`${pad(hh)}h`, clamp(X(Math.min(hh * 60, 1439)), TLP + 8, w - TLP - 8), h - 3);
+  g.fillStyle = '#e6f1f4';
+  p.times.forEach((m) => {
+    const x = X(m);
+    g.beginPath();
+    g.moveTo(x, top + bh + 1);
+    g.lineTo(x - 3, top + bh + 6);
+    g.lineTo(x + 3, top + bh + 6);
+    g.fill();
+  });
+  const now = deviceMinutes();
+  if (now != null) {
+    g.strokeStyle = '#fbbf24';
+    g.setLineDash([3, 3]);
+    g.beginPath();
+    g.moveTo(X(now), top);
+    g.lineTo(X(now), top + bh);
+    g.stroke();
+    g.setLineDash([]);
+  }
+  const x = X(Math.min(SIM.t, 1439));
+  g.strokeStyle = '#fff';
+  g.lineWidth = 2;
+  g.beginPath();
+  g.moveTo(x, top - 2);
+  g.lineTo(x, top + bh + 2);
+  g.stroke();
+  g.fillStyle = '#fff';
+  g.beginPath();
+  g.arc(x, top + bh / 2, 5, 0, Math.PI * 2);
+  g.fill();
+}
+const tl = $('#simTL');
+function seek(ev) {
+  const r = tl.getBoundingClientRect(), cw = r.width - 2 * TLP;
+  let m = clamp(((ev.clientX - r.left - TLP) / cw) * 1439, 0, 1439);
+  const near = simProfile().times.find((t) => Math.abs(t - m) * (cw / 1439) < 6); // aimantation sur les phases
+  if (near != null) m = near;
+  if (SIM.live) setLive(false);
+  SIM.t = m;
+}
+tl.addEventListener('pointerdown', (ev) => {
+  tl.setPointerCapture(ev.pointerId);
+  SIM.drag = true;
+  seek(ev);
+});
+tl.addEventListener('pointermove', (ev) => SIM.drag && seek(ev));
+tl.addEventListener('pointerup', () => (SIM.drag = false));
+tl.addEventListener('pointercancel', () => (SIM.drag = false));
+
+function renderSimHud(p, vals, cl) {
+  $('#simClock3').textContent = fmt(Math.floor(SIM.t) % 1440);
+  $('#simPhase').textContent = phaseLabel(p, SIM.t, vals) + (cl.i ? ' · ☁ nuages' : '') + (SIM.live ? ' · en direct' : '');
+  $('#simChs').innerHTML = channels.map((c, i) => `<span><i style="background:${c.color}"></i>${c.name} ${Math.round(vals[i])}%</span>`).join('');
+  const s = SIM.aq?.status();
+  if (s) {
+    $('#simLife').innerHTML = [['🐟', 'Néons', s.neons], ['🐠', 'Scalaires', s.angels], ['🧡', 'Apistogramma', s.apisto], ['🐡', 'Corydoras', s.corys], ['🌿', 'Plantes', s.plants]]
+      .filter((x) => x[2]).map(([i, n, t]) => `${i} <b>${n}</b> : ${t}`).join('<br>');
+  }
+}
+
+function simTick(now) {
+  SIM.raf = requestAnimationFrame(simTick);
+  const dt = SIM.last ? Math.min(0.25, (now - SIM.last) / 1000) : 0;
+  SIM.last = now;
+  const p = simProfile();
+  if (SIM.live) {
+    const dm = deviceMinutes();
+    if (dm != null) SIM.t = dm + new Date().getSeconds() / 60;
+  } else if (SIM.playing && !SIM.drag) {
+    SIM.t = (SIM.t + (SIM.speed * dt) / 60) % 1440;
+  }
+  const vals = SIM.live && S.st?.C?.ch
+    ? S.st.C.ch.slice(0, channels.length)
+    : channels.map((c, i) => interp(p.times, p.ch[i], Math.min(SIM.t, 1439)));
+  const cl = !SIM.live && $('#simClouds').checked ? cloudsAt(p, SIM.t) : { i: 0, m: 0 };
+  SIM.aq?.setLight(vals, { clouds: cl.i, cloudSpeed: cl.m, dose: doseAt(p, SIM.t) });
+  if (now - SIM.hudAt > 150) {
+    SIM.hudAt = now;
+    renderSimHud(p, vals, cl);
+  }
+  drawTimeline();
+  pushMirror(now);
+}
+
+// ---------------------------------------------------------------- MON BAC
+// Document unique (fiche, population, plantes, décor, carnet) stocké sur le serveur, enregistré automatiquement
+const BAC = { doc: null, saveT: 0 };
+const FISH_BY_ID = Object.fromEntries(FISH_CATALOG.map((s) => [s.id, s]));
+const PLANT_BY_NAME = Object.fromEntries(PLANT_CATALOG.map((p) => [p.name.toLowerCase(), p]));
+const newId = () => Math.random().toString(36).slice(2, 10);
+const todayISO = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+const frNum = (n, d = 1) => Number(n).toLocaleString('fr-FR', { maximumFractionDigits: d });
+const frDate = (iso) => new Date(iso + 'T12:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+const daysBetween = (a, b) => Math.round((new Date(b + 'T12:00') - new Date(a + 'T12:00')) / 86400000);
+const ZONES = ['arrière', 'milieu', 'avant', 'épiphyte', 'flottante'];
+const LOG_TYPES = {
+  eau: { label: "Changement d'eau", icon: '💧', fields: [['percent', '%']] },
+  test: { label: "Test d'eau", icon: '🧪', fields: [['ph', 'pH'], ['gh', 'GH'], ['kh', 'KH'], ['no2', 'NO₂'], ['no3', 'NO₃'], ['nh4', 'NH₄'], ['temp', '°C']] },
+  filtre: { label: 'Entretien du filtre', icon: '🌀' },
+  engrais: { label: 'Engrais', icon: '🌱' },
+  taille: { label: 'Taille des plantes', icon: '✂️' },
+  poissons: { label: 'Poissons (ajout, perte)', icon: '🐟' },
+  autre: { label: 'Autre', icon: '📝' },
+};
+
+async function loadBac() {
+  try {
+    BAC.doc = await api('tank');
+    SIM.popKey = JSON.stringify(simPopulation());
+    updateBacBadge();
+    if (!$('#tab-home').hidden) renderHome();
+  } catch (e) { toast(e.message, true); }
+}
+function saveBac() {
+  clearTimeout(BAC.saveT);
+  $('#bacSaved').textContent = 'Enregistrement…';
+  BAC.saveT = setTimeout(async () => {
+    try {
+      await api('tank', BAC.doc);
+      const n = new Date();
+      $('#bacSaved').textContent = `Enregistré ✓ ${fmt(n.getHours() * 60 + n.getMinutes())}`;
+      // La 3D sera reconstruite avec la nouvelle population à sa prochaine ouverture
+      const key = JSON.stringify(simPopulation());
+      if (key !== SIM.popKey) { SIM.popKey = key; SIM.rebuild = true; }
+      updateBacBadge();
+    } catch (e) {
+      $('#bacSaved').textContent = '';
+      toast(e.message, true);
+    }
+  }, 700);
+}
+
+// Lignes éditables : listes et nombres déclenchent un nouveau rendu, les textes s'enregistrent sans perdre le focus
+function bindRows(sel, arr, rerender, after) {
+  $$(`${sel} [data-i]`).forEach((el) => {
+    const row = arr[+el.dataset.i];
+    $$('[data-k]', el).forEach((inp) => {
+      const structural = inp.tagName === 'SELECT' || inp.type === 'number';
+      inp.addEventListener(structural ? 'change' : 'input', () => {
+        const k = inp.dataset.k;
+        row[k] = inp.type === 'number' ? Math.min(999, Math.max(0, Math.round(+inp.value || 0))) : inp.value;
+        after?.(row, k);
+        saveBac();
+        if (structural) rerender();
+      });
+    });
+    el.querySelector('[data-del]')?.addEventListener('click', () => {
+      arr.splice(+el.dataset.i, 1);
+      saveBac();
+      rerender();
+    });
+  });
+}
+
+// --- Analyse : plages d'eau communes, groupes, prédation, nageoires, longueur du bac, charge, derniers tests ---
+function analyse(doc) {
+  const items = [], add = (lvl, text) => items.push({ lvl, text });
+  const bySp = {};
+  let unknown = 0;
+  for (const f of doc.fish) {
+    if (!(f.count > 0)) continue;
+    const s = FISH_BY_ID[f.species];
+    if (!s) { unknown += f.count; continue; }
+    (bySp[s.id] ||= { s, n: 0 }).n += f.count;
+  }
+  const list = Object.values(bySp);
+  const range = (k) => list.reduce(([a, b], { s }) => [Math.max(a, s[k][0]), Math.min(b, s[k][1])], [-Infinity, Infinity]);
+  const t = range('t'), ph = range('ph'), gh = range('gh');
+  const culprits = (k) => {
+    const hi = list.reduce((m, x) => (x.s[k][0] > m.s[k][0] ? x : m)), lo = list.reduce((m, x) => (x.s[k][1] < m.s[k][1] ? x : m));
+    return `${hi.s.name} (≥ ${frNum(hi.s[k][0])}) et ${lo.s.name} (≤ ${frNum(lo.s[k][1])})`;
+  };
+  if (list.length > 1 && t[0] > t[1]) add('bad', `Températures incompatibles : ${culprits('t')}.`);
+  if (list.length > 1 && ph[0] > ph[1]) add('bad', `pH incompatibles : ${culprits('ph')}.`);
+  if (list.length > 1 && gh[0] > gh[1]) add('warn', `Dureté (GH) incompatible : ${culprits('gh')}.`);
+  for (const { s, n } of list) {
+    if (n < s.group) add('warn', `${s.name} : ${n} individu${n > 1 ? 's' : ''}, au moins ${s.group} conseillés (espèce grégaire).`);
+    if (s.id === 'betta' && n > 1) add('bad', 'Combattants : plusieurs mâles ensemble se battent.');
+    if (s.minLen && doc.tank.length && doc.tank.length < s.minLen) add('warn', `${s.name} : bac de ${s.minLen} cm minimum conseillé (le tien : ${doc.tank.length} cm).`);
+  }
+  for (const { s: p } of list.filter((x) => x.s.preyMax)) {
+    for (const { s: q } of list) if (q !== p && q.cm <= p.preyMax) add('warn', `${p.name} : risque de prédation sur ${q.name} (${frNum(q.cm)} cm adulte), surtout si ces derniers sont introduits petits.`);
+  }
+  for (const { s: n } of list.filter((x) => x.s.nipper)) {
+    for (const { s: q } of list) if (q.longFins) add('warn', `${n.name} mordille les nageoires : risqué avec ${q.name}.`);
+  }
+  for (const { s: e } of list.filter((x) => x.s.snailEater)) {
+    for (const { s: q } of list) if (q !== e && q.kind === 'escargot') add('warn', `${e.name} mange les escargots : ${q.name} menacé.`);
+  }
+  if (doc.plants.some((p) => p.count > 0)) {
+    for (const { s } of list.filter((x) => x.s.plantEater)) add('warn', `${s.name} mange les plantes : déconseillé dans un bac planté.`);
+  }
+  if (unknown) add('info', `${unknown} poisson${unknown > 1 ? 's' : ''} hors catalogue, non évalué${unknown > 1 ? 's' : ''}.`);
+  // Charge : environ 1 cm de poisson adulte par litre ; les gros poissons comptent plus, crevettes et escargots moins
+  const cm = list.reduce((a, { s, n }) => a + n * s.cm * (s.kind ? 0.3 : s.cm > 8 ? 1.5 : 1), 0);
+  const load = doc.tank.volume > 0 && list.length ? (cm / doc.tank.volume) * 100 : null;
+  if (load > 100) add('bad', `Bac surpeuplé : charge ${frNum(load, 0)} % (règle d'environ 1 cm adulte par litre).`);
+  else if (load > 80) add('warn', `Bac bien rempli : charge ${frNum(load, 0)} %.`);
+  // Derniers tests comparés aux besoins de la population
+  const last = (k) => doc.log.filter((e) => e.type === 'test' && e.values?.[k] != null).sort((a, b) => b.date.localeCompare(a.date))[0];
+  const v = (k) => last(k)?.values[k];
+  if (v('temp') != null && list.length && (v('temp') < t[0] || v('temp') > t[1])) add('warn', `Dernière température (${frNum(v('temp'))} °C) hors de la plage commune ${t[0]}–${t[1]} °C.`);
+  if (v('ph') != null && list.length && (v('ph') < ph[0] || v('ph') > ph[1])) add('warn', `Dernier pH (${frNum(v('ph'))}) hors de la plage commune ${frNum(ph[0])}–${frNum(ph[1])}.`);
+  if (v('no2') > 0.1) add('bad', `Nitrites détectés (${frNum(v('no2'), 2)} mg/L) : toxiques, changement d'eau conseillé.`);
+  if (v('nh4') > 0.2) add('bad', `Ammonium élevé (${frNum(v('nh4'), 2)} mg/L).`);
+  if (v('no3') > 50) add('bad', `Nitrates très élevés (${frNum(v('no3'), 0)} mg/L).`);
+  else if (v('no3') > 25) add('warn', `Nitrates élevés (${frNum(v('no3'), 0)} mg/L) : viser moins de 25.`);
+  return { items, list, t, ph, gh, load };
+}
+
+function reminders(doc) {
+  const out = [], today = todayISO();
+  for (const [type, key, label] of [['eau', 'water', "Changement d'eau"], ['filtre', 'filter', 'Entretien du filtre'], ['test', 'test', "Test de l'eau"]]) {
+    const every = doc.reminders?.[key];
+    if (!every) continue;
+    const last = doc.log.filter((e) => e.type === type).map((e) => e.date).sort().pop();
+    if (!last) { out.push({ lvl: 'info', text: `${label} : jamais noté (tous les ${every} j)` }); continue; }
+    const due = every - daysBetween(last, today);
+    out.push({
+      lvl: due < 0 ? 'bad' : due <= 1 ? 'warn' : 'ok',
+      text: due < 0 ? `${label} : en retard de ${-due} j` : due === 0 ? `${label} : aujourd'hui` : `${label} : dans ${due} j (dernier le ${frDate(last)})`,
+    });
+  }
+  return out;
+}
+function updateBacBadge() {
+  if (BAC.doc) $('#tabCare').classList.toggle('alert', reminders(BAC.doc).some((r) => r.lvl === 'bad'));
+}
+
+const ICON = { ok: '✓', warn: '⚠', bad: '✕', info: 'ℹ' };
+const citems = (items) => items.map((x) => `<div class="citem ${x.lvl}"><i>${ICON[x.lvl]}</i><span>${escapeHtml(x.text)}</span></div>`).join('');
+
+function renderBac() {
+  if (!BAC.doc) return;
+  renderBacHead();
+  renderFish();
+  renderCompat();
+  renderPlants();
+  renderDecor();
+  renderLog();
+  renderFiche();
+}
+
+function renderBacHead() {
+  const d = BAC.doc, tk = d.tank, a = analyse(d);
+  const fishN = d.fish.reduce((s, f) => s + (f.count || 0), 0), spN = new Set(d.fish.filter((f) => f.count > 0).map((f) => f.species)).size;
+  const age = tk.startDate ? daysBetween(tk.startDate, todayISO()) : null;
+  $('#bacName').textContent = tk.name || 'Mon bac';
+  $('#bacSub').textContent = [tk.model, tk.length && `${tk.length} × ${tk.width} × ${tk.height} cm`].filter(Boolean).join(' · ');
+  const lvl = a.load > 100 ? 'bad' : a.load > 80 ? 'warn' : '';
+  $('#bacStats').innerHTML = `
+    <div class="stat"><div class="k">Volume</div><div class="v">${tk.volume ? frNum(tk.volume, 0) + ' L' : '—'}</div></div>
+    <div class="stat"><div class="k">En eau depuis</div><div class="v">${age == null ? '—' : age > 60 ? frNum(age / 30.4, 0) + ' mois' : age + ' j'}</div></div>
+    <div class="stat"><div class="k">Poissons</div><div class="v">${fishN} <small style="font-size:12px;color:var(--muted)">${spN} esp.</small></div></div>
+    <div class="stat ${lvl}"><div class="k">Charge</div><div class="v">${a.load == null ? '—' : frNum(a.load, 0) + ' %'}</div></div>
+    <div class="stat"><div class="k">Plantes</div><div class="v">${d.plants.reduce((s, p) => s + (p.count || 0), 0)}</div></div>`;
+  $('#bacTodo').innerHTML = citems(reminders(d));
+  $('#careTodo').innerHTML = citems(reminders(d));
+}
+
+function renderFish() {
+  const d = BAC.doc;
+  const opts = (sel) => FISH_FAMILIES.map(([fam, label]) => `<optgroup label="${label}">` +
+      FISH_CATALOG.filter((s) => s.family === fam).map((s) => `<option value="${s.id}" ${s.id === sel ? 'selected' : ''}>${s.name}</option>`).join('') + '</optgroup>').join('') +
+    `<option value="autre" ${sel === 'autre' ? 'selected' : ''}>Autre espèce…</option>`;
+  $('#fishList').innerHTML = d.fish.map((f, i) => {
+    const s = FISH_BY_ID[f.species];
+    const info = s
+      ? `${s.latin} · ${frNum(s.cm)} cm · ${s.t[0]}–${s.t[1]} °C · pH ${frNum(s.ph[0])}–${frNum(s.ph[1])} · groupe ≥ ${s.group} · ${s.zone} · ${s.temper}${s.sim ? ' · visible en 3D' : ''}`
+      : 'Espèce hors catalogue : non évaluée pour la compatibilité';
+    return `<div class="lrow" data-i="${i}">
+      <select data-k="species">${opts(f.species)}</select>
+      ${f.species === 'autre' ? `<input type="text" data-k="name" placeholder="Nom de l'espèce" value="${escapeHtml(f.name || '')}">` : ''}
+      <input type="number" class="num" data-k="count" min="0" max="999" value="${f.count}" title="Nombre">
+      ${s?.liveries ? `<select data-k="livery" title="Livrée">${s.liveries.map((l) => `<option ${l === f.livery ? 'selected' : ''}>${l}</option>`).join('')}</select>` : ''}
+      <button class="btn sm ghost danger" data-del title="Retirer">✕</button>
+      <div class="lrow-info">${escapeHtml(info)}</div>
+    </div>`;
+  }).join('') || '<div class="hint">Aucun poisson pour l\'instant.</div>';
+  bindRows('#fishList', d.fish, () => { renderFish(); renderCompat(); renderBacHead(); }, (row, k) => {
+    if (k === 'species') row.livery = FISH_BY_ID[row.species]?.liveries?.[0] || '';
+  });
+}
+$('#fishAdd').onclick = () => {
+  BAC.doc.fish.push({ id: newId(), species: 'neon', count: 1, livery: '', added: todayISO(), notes: '' });
+  saveBac();
+  renderFish(); renderCompat(); renderBacHead();
+};
+
+function renderCompat() {
+  const a = analyse(BAC.doc);
+  const r = (x, unit = '', d = 1) => (x[0] <= x[1] ? `${frNum(x[0], d)}–${frNum(x[1], d)}${unit}` : 'aucune');
+  const range = a.list.length ? `<div class="ctl-sub" style="margin-bottom:8px">Plage commune à toutes les espèces : <b>${r(a.t, ' °C')}</b> · pH <b>${r(a.ph)}</b> · GH <b>${r(a.gh, '', 0)}</b></div>` : '';
+  const col = a.load > 100 ? 'var(--danger)' : a.load > 80 ? 'var(--warn)' : 'var(--ok)';
+  const gauge = a.load != null ? `<div class="ctl-sub">Charge du bac : ${frNum(a.load, 0)} %</div><div class="gauge"><div style="width:${Math.min(100, a.load)}%;background:${col}"></div></div>` : '';
+  $('#compat').innerHTML = range + gauge + (a.items.length ? citems(a.items) : citems([{ lvl: 'ok', text: 'Aucun problème détecté.' }]));
+}
+
+function renderPlants() {
+  const d = BAC.doc;
+  $('#plantNames').innerHTML = PLANT_CATALOG.map((p) => `<option value="${escapeHtml(p.name)}">`).join('');
+  $('#plantList').innerHTML = d.plants.map((p, i) => {
+    const c = PLANT_BY_NAME[(p.name || '').toLowerCase()];
+    const info = c ? `${c.type[0].toUpperCase() + c.type.slice(1)} · lumière ${c.light}${c.co2 ? ' · CO₂ conseillé' : ' · sans CO₂'}` : '';
+    return `<div class="lrow" data-i="${i}">
+      <input type="text" data-k="name" list="plantNames" placeholder="Nom de la plante" value="${escapeHtml(p.name || '')}">
+      <input type="number" class="num" data-k="count" min="0" max="999" value="${p.count}" title="Nombre de pieds">
+      <select data-k="zone" style="flex:0 1 120px">${ZONES.map((z) => `<option ${z === p.zone ? 'selected' : ''}>${z}</option>`).join('')}</select>
+      <button class="btn sm ghost danger" data-del title="Retirer">✕</button>
+      ${info ? `<div class="lrow-info">${info}</div>` : ''}
+    </div>`;
+  }).join('') || '<div class="hint">Aucune plante.</div>';
+  bindRows('#plantList', d.plants, () => { renderPlants(); renderBacHead(); }, (row, k) => {
+    // Plante du catalogue choisie : on propose sa zone habituelle
+    const c = k === 'name' && PLANT_BY_NAME[row.name.toLowerCase()];
+    if (c) row.zone = c.zone;
+  });
+}
+$('#plantAdd').onclick = () => {
+  BAC.doc.plants.push({ id: newId(), name: '', count: 1, zone: 'milieu', notes: '' });
+  saveBac();
+  renderPlants();
+};
+
+function renderDecor() {
+  const d = BAC.doc;
+  $('#decorList').innerHTML = d.decor.map((x, i) => `<div class="lrow" data-i="${i}">
+      <select data-k="type" style="flex:0 1 120px">${Object.entries(DECOR_TYPES).map(([k, l]) => `<option value="${k}" ${k === x.type ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      <input type="text" data-k="name" placeholder="Description" value="${escapeHtml(x.name || '')}">
+      <button class="btn sm ghost danger" data-del title="Retirer">✕</button>
+    </div>`).join('') || '<div class="hint">Aucun élément.</div>';
+  bindRows('#decorList', d.decor, renderDecor);
+}
+$('#decorAdd').onclick = () => {
+  BAC.doc.decor.push({ id: newId(), type: 'bois', name: '', notes: '' });
+  saveBac();
+  renderDecor();
+};
+
+// --- Carnet d'entretien ---
+$('#logType').innerHTML = Object.entries(LOG_TYPES).map(([k, t]) => `<option value="${k}">${t.icon} ${t.label}</option>`).join('');
+function renderLogFields() {
+  const t = LOG_TYPES[$('#logType').value];
+  $('#logFields').innerHTML = (t.fields || []).map(([k, l]) => `<input type="number" step="0.1" min="0" data-f="${k}" placeholder="${l}" title="${l}">`).join('');
+}
+$('#logType').onchange = renderLogFields;
+$('#logAdd').onclick = () => {
+  const type = $('#logType').value, date = $('#logDate').value || todayISO(), values = {};
+  $$('#logFields [data-f]').forEach((i) => { if (i.value !== '') values[i.dataset.f] = +i.value; });
+  const note = $('#logNote').value.trim();
+  if (LOG_TYPES[type].fields && !Object.keys(values).length && !note) return toast('Renseigne au moins une valeur ou une note', true);
+  BAC.doc.log.push({ id: newId(), date, type, values, note });
+  $('#logNote').value = '';
+  renderLogFields();
+  saveBac();
+  renderLog(); renderCompat(); renderBacHead();
+  toast(`${LOG_TYPES[type].label} noté ✓`);
+};
+for (const [id, key] of [['remWater', 'water'], ['remFilter', 'filter'], ['remTest', 'test']]) {
+  $('#' + id).addEventListener('change', () => {
+    BAC.doc.reminders = { ...BAC.doc.reminders, [key]: Math.max(0, Math.round(+$('#' + id).value || 0)) };
+    saveBac();
+    renderBacHead();
+  });
+}
+
+// Petite courbe d'un paramètre, avec la zone conseillée en fond
+function sparkline(points, okLo, okHi) {
+  const W = 240, H = 50;
+  const vals = points.map((p) => p.v);
+  let lo = Math.min(...vals, okLo ?? Infinity), hi = Math.max(...vals, okHi ?? -Infinity);
+  if (hi - lo < 1e-6) { lo -= 1; hi += 1; }
+  const m = (hi - lo) * 0.12;
+  lo -= m; hi += m;
+  const X = (i) => (points.length < 2 ? W / 2 : 4 + (i / (points.length - 1)) * (W - 8));
+  const Y = (v) => H - 4 - ((v - lo) / (hi - lo)) * (H - 8);
+  const band = okLo != null ? `<rect x="0" width="${W}" y="${Y(okHi)}" height="${Math.max(0, Y(okLo) - Y(okHi))}" fill="#34d39922"/>` : '';
+  const line = points.map((p, i) => `${X(i)},${Y(p.v)}`).join(' ');
+  const dots = points.map((p, i) => `<circle cx="${X(i)}" cy="${Y(p.v)}" r="2.5" fill="${okLo != null && (p.v < okLo || p.v > okHi) ? '#fbbf24' : '#38bdf8'}"/>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${band}<polyline points="${line}" fill="none" stroke="#38bdf8" stroke-width="1.5"/>${dots}</svg>`;
+}
+
+// Mini-courbes des derniers tests (nitrates, pH, température, nitrites) avec la zone conseillée
+function paramCharts(d, a) {
+  const tests = d.log.filter((e) => e.type === 'test').sort((x, y) => x.date.localeCompare(y.date));
+  const ok = { no3: [0, 25], no2: [0, 0.1], ph: a.list.length && a.ph[0] <= a.ph[1] ? a.ph : null, temp: a.list.length && a.t[0] <= a.t[1] ? a.t : null };
+  return [['no3', 'Nitrates (NO₃)', 'mg/L'], ['ph', 'pH', ''], ['temp', 'Température', '°C'], ['no2', 'Nitrites (NO₂)', 'mg/L']].map(([k, label, unit]) => {
+    const pts = tests.filter((e) => e.values?.[k] != null).slice(-20).map((e) => ({ v: e.values[k], date: e.date }));
+    if (!pts.length) return '';
+    const lastP = pts[pts.length - 1];
+    return `<div class="chartbox"><div class="k"><span>${label}</span><span>${frDate(lastP.date)}</span></div>
+      <div class="v">${frNum(lastP.v, 2)} <small style="font-size:12px;color:var(--muted)">${unit}</small></div>${sparkline(pts, ok[k]?.[0], ok[k]?.[1])}</div>`;
+  }).join('');
+}
+
+function renderLog() {
+  const d = BAC.doc, a = analyse(d);
+  if (!$('#logDate').value) $('#logDate').value = todayISO();
+  if (!$('#logFields').children.length) renderLogFields();
+  $('#remWater').value = d.reminders?.water ?? 7;
+  $('#remFilter').value = d.reminders?.filter ?? 30;
+  $('#remTest').value = d.reminders?.test ?? 14;
+  $('#logCharts').innerHTML = paramCharts(d, a);
+  const summary = (e) => Object.entries(e.values || {}).map(([k, v]) => {
+    const f = LOG_TYPES[e.type]?.fields?.find((x) => x[0] === k);
+    return k === 'percent' ? `${frNum(v)} %` : `${f ? f[1] : k} ${frNum(v, 2)}`;
+  }).join(' · ');
+  const rows = [...d.log].sort((x, y) => y.date.localeCompare(x.date)).slice(0, 40);
+  $('#logList').innerHTML = rows.length ? rows.map((e) => {
+    const t = LOG_TYPES[e.type] || LOG_TYPES.autre;
+    return `<div class="citem info"><i>${t.icon}</i><span class="grow"><b>${frDate(e.date)}</b> · ${t.label}${summary(e) ? ' · ' + summary(e) : ''}${e.note ? ' — ' + escapeHtml(e.note) : ''}</span>
+      <button class="btn sm ghost danger" data-logdel="${e.id}" title="Supprimer">✕</button></div>`;
+  }).join('') : '<div class="hint">Rien de noté pour l\'instant : ajoute ton premier changement d\'eau ou test ci-dessus.</div>';
+  $$('#logList [data-logdel]').forEach((b) => b.onclick = () => {
+    if (!confirm('Supprimer cette entrée du carnet ?')) return;
+    d.log = d.log.filter((e) => e.id !== b.dataset.logdel);
+    saveBac();
+    renderLog(); renderCompat(); renderBacHead();
+  });
+}
+
+// --- Fiche du bac ---
+const FICHE = [
+  ['name', 'Nom', 'text'], ['model', 'Modèle', 'text'], ['volume', 'Volume (L)', 'number'], ['startDate', 'Mise en eau', 'date'],
+  ['length', 'Longueur (cm)', 'number'], ['width', 'Largeur (cm)', 'number'], ['height', 'Hauteur (cm)', 'number'], ['substrate', 'Sol', 'text'],
+  ['filter', 'Filtration', 'text'], ['heater', 'Chauffage', 'text'], ['light', 'Éclairage', 'text'], ['co2', 'CO₂ / engrais', 'text'],
+  ['notes', 'Notes', 'textarea'],
+];
+function renderFiche() {
+  const tk = BAC.doc.tank;
+  $('#fiche').innerHTML = FICHE.map(([k, l, type]) => `<label class="field ${type === 'textarea' ? 'wide' : ''}">${l}
+      ${type === 'textarea' ? `<textarea data-t="${k}">${escapeHtml(tk[k] || '')}</textarea>` : `<input type="${type}" data-t="${k}" value="${escapeHtml(tk[k] ?? '')}">`}</label>`).join('');
+  $$('#fiche [data-t]').forEach((inp) => inp.addEventListener('input', () => {
+    tk[inp.dataset.t] = inp.type === 'number' ? (inp.value === '' ? null : +inp.value) : inp.value;
+    saveBac();
+    renderBacHead();
+    if (['volume', 'length'].includes(inp.dataset.t)) renderCompat();
+  }));
+}
+
+// Population représentée dans la 3D (plafonnée pour rester fluide)
+function simPopulation() {
+  const pop = { neon: 0, angel: [], cory: 0, apisto: 0 };
+  for (const f of BAC.doc?.fish || []) {
+    const sim = FISH_BY_ID[f.species]?.sim;
+    if (!sim || !(f.count > 0)) continue;
+    if (sim === 'angel') for (let i = 0; i < f.count; i++) pop.angel.push(f.livery || 'argenté');
+    else pop[sim] += f.count;
+  }
+  pop.neon = Math.min(pop.neon, 60);
+  pop.angel = pop.angel.slice(0, 8);
+  pop.cory = Math.min(pop.cory, 15);
+  pop.apisto = Math.min(pop.apisto, 4);
+  return pop;
+}
+
+// ---------------------------------------------------------------- ACCUEIL (tableau de bord)
+function buildHome() {
+  $('#hMeters').innerHTML = channels.map((c, i) => `
+    <div class="meter"><div class="lbl"><i style="background:${c.color}"></i>${c.name}</div>
+    <div class="val" id="hv${i}">–<small>%</small></div><div class="bar"><div id="hb${i}" style="background:${c.color};width:0"></div></div></div>`).join('');
+  $('#hShortcuts').innerHTML = SHORTCUTS.map((sc) => `<button class="sc" data-hsc="${sc.id}"><span class="ic" style="background:#23414c">${sc.icon}</span><span><b>${sc.name}</b><small>${durLabel(sc.dur)}</small></span></button>`).join('');
+  $$('#hShortcuts [data-hsc]').forEach((b) => b.onclick = async () => {
+    const sc = SHORTCUTS.find((x) => x.id === b.dataset.hsc);
+    await runShortcut(sc);
+    toast(`${sc.name} activé ✓`);
+    renderHomeLight();
+  });
+}
+
+// Partie « lumière » : mise à jour à chaque statut reçu du contrôleur
+function renderHomeLight() {
+  if ($('#tab-home').hidden || !S.ov) return;
+  const st = S.st?.S || {}, vals = (S.st?.C?.ch || []).slice(0, channels.length);
+  $('#hClock').textContent = st.dtime || '--:--';
+  $('#hProf').textContent = `${S.ov.active.name} · P${S.ov.active.num + 1}`;
+  $('#hMode').className = $('#modeBadge').className;
+  $('#hMode').textContent = $('#modeBadge').textContent;
+  vals.forEach((v, i) => { $('#hv' + i).innerHTML = `${v}<small>%</small>`; $('#hb' + i).style.width = v + '%'; });
+}
+
+function renderHome() {
+  renderHomeLight();
+  if (!BAC.doc) return;
+  const d = BAC.doc, a = analyse(d);
+  $('#hTodo').innerHTML = citems(reminders(d));
+  const alerts = a.items.filter((x) => x.lvl !== 'ok');
+  $('#hAlerts').innerHTML = citems(alerts.length ? alerts : [{ lvl: 'ok', text: 'Tout va bien : aucune alerte sur la population ni sur les derniers tests.' }]);
+  $('#hParams').innerHTML = paramCharts(d, a) || '<div class="hint">Aucun test noté pour l\'instant.</div>';
+  const others = d.fish.filter((f) => f.count > 0 && !FISH_BY_ID[f.species]);
+  const chips = [...a.list.map(({ s, n }) => `<span><b>${n}</b> ${escapeHtml(s.name)}</span>`), ...others.map((f) => `<span><b>${f.count}</b> ${escapeHtml(f.name || 'Autre espèce')}</span>`)];
+  const col = a.load > 100 ? 'var(--danger)' : a.load > 80 ? 'var(--warn)' : 'var(--ok)';
+  $('#hPop').innerHTML = (chips.length ? `<div class="pop-chips">${chips.join('')}</div>` : '<div class="hint">Aucun poisson renseigné.</div>') +
+    (a.load != null ? `<div class="ctl-sub">Charge du bac : ${frNum(a.load, 0)} % · ${frNum(d.tank.volume, 0)} L</div><div class="gauge"><div style="width:${Math.min(100, a.load)}%;background:${col}"></div></div>` : '');
+}
+
+// Entretien en un clic depuis l'accueil
+function quickLog(type, values = {}) {
+  if (!BAC.doc) return;
+  BAC.doc.log.push({ id: newId(), date: todayISO(), type, values, note: '' });
+  saveBac();
+  renderHome();
+  toast(`${LOG_TYPES[type].label} noté ✓`);
+}
+$('#hWater').onclick = () => {
+  const pct = prompt("Pourcentage d'eau changé ?", '30');
+  if (pct !== null) quickLog('eau', { percent: Math.max(1, Math.min(100, Math.round(+pct) || 30)) });
+};
+$('#hFilter').onclick = () => quickLog('filtre');
+
+// ---------------------------------------------------------------- RÉGLAGES
+const ST = { s: null };
+const kv = (sel, rows) => ($(sel).innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${escapeHtml(v ?? '—')}</dd>`).join(''));
+
+async function loadSettings() {
+  renderCredits();
+  try {
+    ST.s = await api('settings');
+    renderSettings();
+  } catch (e) { toast(e.message, true); }
+}
+
+// Licences CC BY : l'auteur doit être cité
+const MODEL_CREDITS = {
+  root_cluster: ['Root Cluster 01', 'Jenelle van Heerden, Rico Cilliers (Poly Haven)', 'CC0', 'https://polyhaven.com/a/root_cluster_01'],
+  neon: ['Paracheirodon Innesi _ Tetra Neon', 'BlueMesh', 'CC BY', 'https://sketchfab.com/models/2fabf5db754746b7b81ebfa0bbe99161'],
+  scalaire: ['Freshwater Angelfish', 'monte-hotate', 'Sketchfab Free Standard', 'https://sketchfab.com/models/37475fc6c8904b6bbf7e27617bd851b8'],
+  corydoras: ['Bronze Corydora', 'chuajop', 'CC BY', 'https://sketchfab.com/models/80db835f3bb7420aae1763c4f52122e8'],
+  anubias: ['Plants Anubias', 'Pala_002', 'CC BY', 'https://sketchfab.com/models/2ba1d06a191b437e848b81b2981a9e02'],
+  bois: ['Real Aquarium Wood 3D scan', 'zdenkoroman', 'CC BY', 'https://sketchfab.com/models/c53807eff7c4427faacfde6c1b581532'],
+  plantes: ['Aquariumplants (Java Fern, Vallisneria etc)', 'Nullifiedit', 'CC BY', 'https://sketchfab.com/models/f34fac656a364f8eaeab0918179d6df6'],
+};
+async function renderCredits() {
+  const used = await api('models').catch(() => []);
+  const rows = used.filter((m) => MODEL_CREDITS[m]).map((m) => {
+    const [title, author, license, url] = MODEL_CREDITS[m];
+    return `<dt>${escapeHtml(license)}</dt><dd><a href="${url}" target="_blank" rel="noopener">${escapeHtml(title)}</a> — ${escapeHtml(author)}</dd>`;
+  });
+  $('#stCredits').innerHTML = rows.length ? rows.join('') : '<dt>—</dt><dd>Aucun modèle réel installé</dd>';
+}
+
+function renderSettings() {
+  const s = ST.s, n = s.net;
+  $('#stTz').innerHTML = s.timezones.map((t, i) => `<option value="${i}">${escapeHtml(t)}</option>`).join('');
+  $('#stTz').value = s.tzone;
+  $('#stNtpOn').checked = s.ntp.on;
+  $('#stNtp').value = s.ntp.server || '';
+  $('#stNtpOk').textContent = s.ntp.ok ? '✓ joint' : '✗ injoignable';
+  $('#stNtpOk').style.color = s.ntp.ok ? 'var(--ok)' : 'var(--danger)';
+  $('#stDate').value = s.date;
+  $('#stTime').value = s.time;
+  kv('#stDevice', [
+    ['Modèle', s.device.type], ['Lampe', s.lamp], ['Matériel', s.device.hw], ['Firmware', s.device.fw],
+    ['Adresse IP', s.device.ip], ['Adresse MAC', s.device.mac], ['Langue d\'origine', s.lang],
+  ]);
+  kv('#stNet', [
+    ['Mode', n.mode === 'WLAN' ? 'Connecté au WiFi' : 'Point d\'accès'],
+    ['WiFi', n.wifi ? n.ssid : 'désactivé'],
+    ['Adressage', n.dhcp ? 'Automatique (DHCP)' : `Fixe · ${n.ip} / ${n.mask} · passerelle ${n.gw}`],
+    ['Point d\'accès de secours', `${n.apSsid} · ${n.apIp}`],
+  ]);
+  $('#stFwLink').href = `http://${S.ov.device}/device.html`;
+  $('#stNetLink').href = `http://${S.ov.device}/setting.html`;
+  stUpdate();
+}
+
+function stChanges() {
+  const s = ST.s, c = {};
+  if (!s) return c;
+  if (+$('#stTz').value !== s.tzone) c.tzone = +$('#stTz').value;
+  if ($('#stNtpOn').checked !== s.ntp.on) c.ntp = $('#stNtpOn').checked;
+  if ($('#stNtpOn').checked && $('#stNtp').value.trim() !== s.ntp.server) c.ntpServer = $('#stNtp').value.trim();
+  if (!$('#stNtpOn').checked) {
+    if ($('#stDate').value !== s.date) c.date = $('#stDate').value;
+    if ($('#stTime').value !== s.time) c.time = $('#stTime').value;
+  }
+  return c;
+}
+
+function stUpdate() {
+  const ntp = $('#stNtpOn').checked;
+  $('#stNtpRow').classList.toggle('disabled', !ntp);
+  $('#stManual').hidden = ntp;
+  $('#stSave').disabled = !Object.keys(stChanges()).length;
+  updateDrift();
+}
+
+// Compare l'heure du contrôleur à celle de cet appareil et propose le bon fuseau
+function updateDrift() {
+  if (!ST.s || $('#tab-set').hidden) return;
+  const now = new Date(), lm = now.getHours() * 60 + now.getMinutes(), dm = deviceMinutes();
+  $('#stClock').textContent = S.st?.S?.dtime || ST.s.time;
+  $('#stLocal').textContent = fmt(lm);
+  const el = $('#stDrift');
+  if (dm == null) { el.textContent = ''; return; }
+  const d = ((((dm - lm + 720) % 1440) + 1440) % 1440) - 720;
+  if (Math.abs(d) <= 2) {
+    el.className = 'stat-note';
+    el.textContent = '✓ Le contrôleur est à l\'heure.';
+    return;
+  }
+  const off = -now.getTimezoneOffset() / 60;
+  const idx = ST.s.timezones.findIndex((t) => t.includes(`UTC ${off < 0 ? '-' : '+'} ${Math.abs(off)})`));
+  el.className = 'stat-note warn';
+  el.innerHTML = `Le contrôleur a ${fmtDur(Math.abs(d))} ${d < 0 ? 'de retard' : 'd\'avance'} : tout le programme est décalé d'autant.` +
+    (idx >= 0 && idx !== +$('#stTz').value ? ` <button class="btn sm" id="stFix">Choisir ${escapeHtml(ST.s.timezones[idx])}</button>` : '');
+  $('#stFix')?.addEventListener('click', () => { $('#stTz').value = idx; stUpdate(); });
+}
+
+for (const id of ['stTz', 'stNtpOn', 'stNtp', 'stDate', 'stTime']) {
+  $('#' + id).addEventListener('input', stUpdate);
+  $('#' + id).addEventListener('change', stUpdate);
+}
+$('#stNow').onclick = () => {
+  const d = new Date();
+  $('#stDate').value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  $('#stTime').value = fmt(d.getHours() * 60 + d.getMinutes());
+  stUpdate();
+};
+$('#stSave').onclick = async () => {
+  const c = stChanges();
+  if (!Object.keys(c).length) return;
+  const btn = $('#stSave');
+  btn.disabled = true;
+  btn.textContent = 'Enregistrement…';
+  try {
+    ST.s = await api('settings', c);
+    renderSettings();
+    poll();
+    toast('Réglages enregistrés ✓');
+  } catch (e) { toast(e.message, true); }
+  btn.textContent = 'Enregistrer';
+  stUpdate();
+};
+
+// ---------------------------------------------------------------- SAUVEGARDE
+$('#bkSave').onclick = async () => {
+  const btn = $('#bkSave'), msg = $('#bkMsg');
+  btn.disabled = true;
+  try {
+    const profiles = [];
+    for (let n = 0; n < 8; n++) {
+      msg.textContent = `Lecture du profil ${n + 1}/8…`;
+      const p = await api('profile/' + n);
+      S.profCache[n] = p;
+      profiles.push({ name: p.name, times: p.times, ch: p.ch, cI: p.cI, cM: p.cM });
+    }
+    S.ov = await api('overview');
+    const data = { app: 'aquarium-lumiere', version: 1, savedAt: new Date().toISOString(), device: S.ov.device, lamp: S.ov.lamp, week: S.ov.week, profiles };
+    const d = new Date();
+    const name = `helialux-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}h${pad(d.getMinutes())}.json`;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    msg.textContent = `Sauvegarde téléchargée : ${name}`;
+  } catch (e) {
+    msg.textContent = '';
+    toast(e.message, true);
+  }
+  btn.disabled = false;
+};
+
+$('#bkLoad').onclick = () => $('#bkFile').click();
+$('#bkFile').onchange = async () => {
+  const file = $('#bkFile').files[0];
+  $('#bkFile').value = '';
+  if (!file) return;
+  let data;
+  try {
+    data = JSON.parse(await file.text());
+    const okProf = (p) => p && typeof p.name === 'string' && Array.isArray(p.times) && Array.isArray(p.ch) && Array.isArray(p.cI) && Array.isArray(p.cM);
+    if (data.app !== 'aquarium-lumiere' || data.profiles?.length !== 8 || !data.profiles.every(okProf) || data.week?.length !== 7) throw new Error();
+  } catch {
+    return toast('Fichier de sauvegarde invalide', true);
+  }
+  if (data.lamp !== S.ov.lamp && !confirm(`Cette sauvegarde vient d'une lampe « ${data.lamp} » (actuelle : « ${S.ov.lamp} »). Continuer ?`)) return;
+  const when = data.savedAt ? new Date(data.savedAt).toLocaleString('fr-FR') : 'date inconnue';
+  const list = data.profiles.map((p, i) => `P${i + 1} · ${p.name}`).join('\n');
+  if (!confirm(`Restaurer la sauvegarde du ${when} ?\n\nLes 8 profils et la semaine du contrôleur seront remplacés par :\n${list}`)) return;
+  if (isDirty() && !confirm('Les modifications non enregistrées de l\'éditeur seront perdues. Continuer ?')) return;
+  const msg = $('#bkMsg');
+  $('#bkLoad').disabled = true;
+  try {
+    await stopPreview();
+    for (let n = 0; n < 8; n++) {
+      msg.textContent = `Restauration du profil ${n + 1}/8…`;
+      const p = data.profiles[n];
+      S.profCache[n] = await api('profile/' + n, { name: p.name, times: p.times, ch: p.ch, cI: p.cI, cM: p.cM });
+    }
+    msg.textContent = 'Restauration de la semaine…';
+    S.ov = await api('week', { week: data.week });
+    wk = null;
+    E.p = E.orig = null;
+    E.num = null;
+    $('#editor').hidden = true;
+    $('#heroProf').textContent = S.ov.active.name;
+    $('#heroNum').textContent = `Profil P${S.ov.active.num + 1}`;
+    renderNowChart();
+    msg.textContent = 'Sauvegarde restaurée ✓';
+    toast('Sauvegarde restaurée ✓');
+  } catch (e) {
+    msg.textContent = 'Restauration interrompue : ' + e.message;
+    toast(e.message, true);
+  }
+  $('#bkLoad').disabled = false;
+};
+
+// ---------------------------------------------------------------- onglets
+// Navigation : 5 espaces ; la lumière a ses sous-onglets (Direct, 3D, Programmes, Semaine)
+const LIGHT_VIEWS = ['now', 'sim', 'prof', 'week'];
+let lightView = 'now';
+async function showView(view) {
+  if (needsController(view)) {
+    toast('Contrôleur non connecté : vérifie son adresse dans Réglages', true);
+    view = 'set';
+  }
+  if (view !== 'prof') await stopPreview();
+  if (LIGHT_VIEWS.includes(view)) lightView = view;
+  const space = LIGHT_VIEWS.includes(view) ? 'light' : view;
+  $$('nav.tabs button').forEach((x) => x.classList.toggle('on', x.dataset.space === space));
+  $('#lightNav').hidden = space !== 'light';
+  $$('#lightNav button').forEach((x) => x.classList.toggle('on', x.dataset.tab === view));
+  for (const t of ['home', 'now', 'sim', 'prof', 'week', 'bac', 'care', 'set']) $('#tab-' + t).hidden = t !== view;
+  if (view === 'home') renderHome();
+  if (view === 'bac' || view === 'care') renderBac();
+  if (view === 'sim') openSim();
+  else closeSim();
+  if (view === 'set') { loadCtrl(); if (S.ov) loadSettings(); }
+  if (view === 'now') renderNowChart();
+  if (view === 'prof') { buildChips(); if (E.num == null) openProfile(S.ov.active.num); else renderEditor(true); }
+  if (view === 'week') buildWeek();
+}
+$$('nav.tabs button').forEach((b) => b.onclick = () => showView(b.dataset.space === 'light' ? lightView : b.dataset.space));
+$$('#lightNav button').forEach((b) => b.onclick = () => showView(b.dataset.tab));
+document.addEventListener('click', (ev) => {
+  const go = ev.target.closest('[data-go]');
+  if (go) showView(go.dataset.go);
+});
+window.addEventListener('resize', debounce(() => {
+  renderNowChart();
+  if (!$('#tab-prof').hidden && E.p) renderEditor();
+  if (!$('#tab-week').hidden && wk) drawWeekCharts();
+}, 150));
+
+// ---------------------------------------------------------------- démarrage
+// --- Contrôleur : adresse réglable dans Réglages ---
+async function loadCtrl() {
+  try {
+    const c = await api('config');
+    $('#ctrlIp').value = c.controllerIp || '';
+    $('#ctrlIp').disabled = $('#ctrlSave').disabled = c.fromEnv;
+    if (c.fromEnv) $('#ctrlMsg').textContent = 'Adresse imposée au lancement par la variable d\'environnement HELIALUX.';
+  } catch {}
+}
+$('#ctrlSave').onclick = async () => {
+  const btn = $('#ctrlSave');
+  btn.disabled = true;
+  btn.textContent = 'Test en cours…';
+  try {
+    await api('config', { controllerIp: $('#ctrlIp').value.trim() });
+    $('#ctrlMsg').textContent = '✓ Contrôleur trouvé et adresse enregistrée.';
+    toast('Contrôleur connecté ✓');
+    await connectController();
+  } catch (e) {
+    $('#ctrlMsg').textContent = '✕ ' + e.message;
+    toast(e.message, true);
+  }
+  btn.disabled = false;
+  btn.textContent = 'Tester et enregistrer';
+};
+
+// Les vues Lumière ont besoin du contrôleur ; les autres espaces fonctionnent sans
+const needsController = (view) => LIGHT_VIEWS.includes(view) && !S.ov;
+let ctrlRetry = 0;
+async function connectController() {
+  clearTimeout(ctrlRetry);
+  try {
+    S.ov = await api('overview');
+  } catch (e) {
+    setConn(false);
+    $('#conn span').textContent = /non configurée/.test(e.message) ? 'Contrôleur à configurer' : 'Contrôleur injoignable';
+    ctrlRetry = setTimeout(connectController, 10000);
+    return false;
+  }
+  if (S.ov.lamp !== S.lamp) {
+    S.lamp = S.ov.lamp;
+    setupLamp(S.ov.lamp);
+    buildNow();
+    buildHome();
+  }
+  $('#heroProf').textContent = S.ov.active.name;
+  $('#heroNum').textContent = `Profil P${S.ov.active.num + 1}`;
+  setConn(true);
+  await poll();
+  return true;
+}
+
+(async function init() {
+  // Interface construite tout de suite (lampe 4 canaux par défaut), le contrôleur est rejoint ensuite
+  S.lamp = '4Ch';
+  setupLamp(S.lamp);
+  buildNow();
+  buildHome();
+  buildAquarium();
+  loadBac();
+  showView('home');
+  if (!(await connectController())) {
+    await loadCtrl();
+    if (!$('#ctrlIp').value) {
+      toast('Configure l\'adresse de ton contrôleur HeliaLux');
+      showView('set');
+    }
+    return;
+  }
+
+  // Raccourcis d'application (manifest) : /?raccourci=nourrissage
+  const q = new URLSearchParams(location.search).get('raccourci');
+  if (q) {
+    history.replaceState(null, '', location.pathname);
+    const sc = SHORTCUTS.find((x) => x.id === q);
+    if (sc) { await runShortcut(sc); toast(`${sc.name} activé ✓`); }
+  }
+})();
+</script>
+</body>
+</html>
