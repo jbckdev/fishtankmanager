@@ -169,3 +169,7 @@ scripts/make-icons.js      Génération des icônes
 
 - Rendu 3D : [Three.js](https://threejs.org/).
 - Modèles 3D facultatifs : voir le tableau ci-dessus (Sketchfab, Poly Haven).
+
+## Licence
+
+Code sous licence [MIT](LICENSE). Les modèles 3D facultatifs gardent leur propre licence (voir le tableau plus haut).
