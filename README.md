@@ -6,6 +6,18 @@ Elle remplace l'interface web d'origine du HeliaLux SmartControl, peu pratique, 
 
 > Projet personnel, non officiel, sans lien avec Juwel. Utilisation à vos risques.
 
+![Simulation 3D du bac en plein jour](docs/screenshots/simulation.jpg)
+
+## Captures d'écran
+
+| Tableau de bord | Lumière en direct |
+|---|---|
+| ![Tableau de bord](docs/screenshots/accueil.png) | ![Lumière en direct](docs/screenshots/direct.png) |
+| **Éditeur de programmes** | **Mon bac : population et compatibilité** |
+| ![Éditeur de programmes](docs/screenshots/programmes.png) | ![Mon bac](docs/screenshots/bac.png) |
+
+<p align="center"><img src="docs/screenshots/mobile.png" alt="Version mobile" width="260"><br><em>Sur téléphone</em></p>
+
 ## Fonctionnalités
 
 ### Accueil : tableau de bord
@@ -155,6 +167,7 @@ public/index.html          Application (interface, logique)
 public/catalogue.js        Catalogue des espèces, plantes et types de décor
 public/sim3d.js            Simulation 3D (Three.js)
 public/manifest.webmanifest, icônes   Installation sur téléphone (PWA)
+docs/screenshots/          Captures d'écran du README
 scripts/optimize-models.js Optimisation des modèles 3D (npm run models)
 scripts/make-icons.js      Génération des icônes
 ```
