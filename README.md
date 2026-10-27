@@ -4,7 +4,7 @@ Application web pour gérer son aquarium au quotidien : **éclairage Juwel Helia
 
 Elle remplace l'interface web d'origine du HeliaLux SmartControl, peu pratique, par une interface moderne utilisable sur ordinateur et sur téléphone.
 
-> Projet personnel, non officiel, sans lien avec Juwel. Utilisation à vos risques.
+> Projet personnel, non officiel, sans lien avec Juwel.
 
 ![Simulation 3D du bac en plein jour](docs/screenshots/simulation.jpg)
 
